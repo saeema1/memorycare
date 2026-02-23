@@ -53,5 +53,5 @@ class PatientProfileForm(forms.ModelForm):
         }
 
 
-    # Backwards-compatibility alias: some modules expect `PatientRegistrationForm`
-    PatientRegistrationForm = UserRegistrationForm
+# Backwards-compatibility alias: some modules expect `PatientRegistrationForm`
+PatientRegistrationForm = UserRegistrationForm
