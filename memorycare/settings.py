@@ -134,5 +134,5 @@ REST_FRAMEWORK = {
 
 # Authentication redirects
 LOGIN_URL = 'accounts:login'
-LOGIN_REDIRECT_URL = 'dashboard:home'
+LOGIN_REDIRECT_URL = 'dashboard:doctor_dashboard'
 LOGOUT_REDIRECT_URL = 'accounts:login'

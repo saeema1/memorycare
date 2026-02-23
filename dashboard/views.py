@@ -73,10 +73,10 @@ def caregiver_dashboard(request):
 
 
 @login_required
-def caregiver_patient_detail(request, patient_id):
+def caregiver_patient_detail(request, pk):
     """Detail view for caregivers to view assigned patient info."""
     from accounts.models import User
-    patient = get_object_or_404(User, id=patient_id)
+    patient = get_object_or_404(User, id=pk)
     return render(request, 'dashboard/caregiver_patient_detail.html', {'patient': patient})
 
 
@@ -236,7 +236,7 @@ def cognitive_tests(request):
 def daily_activities(request):
     """List and manage today's activities for the logged-in patient, including recurring activities."""
     from .models import DailyActivity
-    if not request.user.is_patient():
+    if not safe_has_role(request.user, 'is_patient'):
         messages.error(request, 'Patient access required')
         return redirect('dashboard:home')
 
@@ -258,14 +258,14 @@ def activity_create(request):
     from accounts.models import User
 
     # Restrict patients from creating activities
-    if request.user.is_patient():
+    if safe_has_role(request.user, 'is_patient'):
         messages.error(request, 'Patients cannot create activities.')
         return redirect('dashboard:daily_activities')
 
     if request.method == 'POST':
         form = DailyActivityForm(request.POST)
         # If non-staff (patient), remove user field from the form and force activity to belong to them
-        if not (request.user.is_doctor() or request.user.is_caregiver()):
+        if not (safe_has_role(request.user, 'is_doctor') or safe_has_role(request.user, 'is_caregiver')):
             form.fields.pop('user', None)
             if form.is_valid():
                 a = form.save(commit=False)
@@ -504,7 +504,7 @@ def patient_dashboard_data_ajax(request):
     from .models import DailyActivity, MoodEntry, TestResult
     import datetime
 
-    if not request.user.is_patient():
+    if not safe_has_role(request.user, 'is_patient'):
         return JsonResponse({'ok': False}, status=403)
 
     today = timezone.localdate()
@@ -639,7 +639,7 @@ def activity_create_ajax(request):
     from .forms import DailyActivityForm
 
     # Restrict patients from creating activities
-    if request.user.is_patient():
+    if safe_has_role(request.user, 'is_patient'):
         return JsonResponse({'ok': False, 'error': 'Permission denied'}, status=403)
 
     if request.method != 'POST':
@@ -648,7 +648,7 @@ def activity_create_ajax(request):
     post = request.POST.copy()
     form = DailyActivityForm(post)
     # If patient, don't allow setting user via form
-    if not (request.user.is_doctor() or request.user.is_caregiver()):
+    if not (safe_has_role(request.user, 'is_doctor') or safe_has_role(request.user, 'is_caregiver')):
         if 'user' in form.fields:
             form.fields.pop('user')
 

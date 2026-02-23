@@ -17,6 +17,13 @@ def user_login(request):
         if form.is_valid():
             user = form.get_user()
             login(request, user)
+            # Role-based redirect for compatibility with older login form
+            if hasattr(user, 'role'):
+                if user.role == 'DOCTOR':
+                    return redirect('dashboard:doctor_dashboard')
+                if user.role == 'CAREGIVER':
+                    return redirect('dashboard:caregiver_dashboard')
+                return redirect('dashboard:patient_dashboard')
             return redirect('dashboard:home')
         else:
             messages.error(request, 'Invalid username or password')
@@ -24,6 +31,32 @@ def user_login(request):
         form = UserLoginForm(request)
 
     return render(request, 'accounts/login.html', {'form': form})
+
+
+def login_view(request):
+    """Authenticate and redirect users based on their role."""
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        user = authenticate(request, username=username, password=password)
+
+        if user is not None:
+            login(request, user)
+
+            if getattr(user, 'role', '').upper() == 'DOCTOR':
+                return redirect('dashboard:doctor_dashboard')
+            elif getattr(user, 'role', '').upper() == 'CAREGIVER':
+                return redirect('dashboard:caregiver_dashboard')
+            else:
+                return redirect('dashboard:patient_dashboard')
+
+    return render(request, 'accounts/login.html')
+
+
+def logout_view(request):
+    logout(request)
+    return redirect('accounts:login')
 
 
 def register(request):
@@ -55,6 +88,24 @@ def register_patient(request):
         form = PatientRegistrationForm()
 
     return render(request, 'accounts/register_patient.html', {'form': form})
+
+
+@login_required
+def register_caregiver(request):
+    """Simple caregiver registration endpoint used by admins/doctors."""
+    from django.shortcuts import render, redirect
+    # Reuse PatientRegistrationForm for the example; ideally create a dedicated CaregiverRegistrationForm
+    if request.method == 'POST':
+        form = PatientRegistrationForm(request.POST)
+        if form.is_valid():
+            caregiver = form.save(commit=False)
+            caregiver.role = 'CAREGIVER'
+            caregiver.save()
+            return redirect('dashboard:doctor_dashboard')
+    else:
+        form = PatientRegistrationForm()
+
+    return render(request, 'accounts/register_caregiver.html', {'form': form})
 
 
 def user_logout(request):

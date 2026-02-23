@@ -5,10 +5,11 @@ app_name = 'accounts'
 
 urlpatterns = [
     path('', views.home, name='home'),
-    path('login/', views.user_login, name='login'),
+    path('login/', views.login_view, name='login'),
+    path('logout/', views.logout_view, name='logout'),
     path('register/', views.register, name='register'),
     path('register/patient/', views.register_patient, name='register_patient'),
-    path('logout/', views.user_logout, name='logout'),
+    path('register/caregiver/', views.register_caregiver, name='register_caregiver'),
 
     # Patient-specific
     path('profile/', views.profile, name='profile'),
