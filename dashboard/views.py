@@ -3,13 +3,28 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 
 
+def safe_has_role(user, attr_name):
+    """Call role-check helpers safely when they may be stored as booleans on the instance.
+
+    Some code may set `user.is_doctor = True` (instance attribute) which shadows
+    the class method. This helper returns the boolean either way.
+    """
+    attr = getattr(user, attr_name, False)
+    if isinstance(attr, bool):
+        return attr
+    try:
+        return attr()
+    except Exception:
+        return False
+
+
 @login_required
 def home(request):
-    if request.user.is_doctor():
+    if safe_has_role(request.user, 'is_doctor'):
         return redirect('dashboard:doctor_dashboard')
-    elif request.user.is_caregiver():
+    elif safe_has_role(request.user, 'is_caregiver'):
         return redirect('dashboard:caregiver_dashboard')
-    elif request.user.is_patient():
+    elif safe_has_role(request.user, 'is_patient'):
         return redirect('dashboard:patient_dashboard')
     else:
         messages.error(request, 'Invalid role')
@@ -18,7 +33,7 @@ def home(request):
 
 @login_required
 def doctor_dashboard(request):
-    if not request.user.is_doctor():
+    if not safe_has_role(request.user, 'is_doctor'):
         messages.error(request, 'Doctor access required')
         return redirect('dashboard:home')
 
@@ -27,7 +42,7 @@ def doctor_dashboard(request):
 
 @login_required
 def caregiver_dashboard(request):
-    if not request.user.is_caregiver():
+    if not safe_has_role(request.user, 'is_caregiver'):
         messages.error(request, 'Caregiver access required')
         return redirect('dashboard:home')
 
@@ -58,8 +73,16 @@ def caregiver_dashboard(request):
 
 
 @login_required
+def caregiver_patient_detail(request, patient_id):
+    """Detail view for caregivers to view assigned patient info."""
+    from accounts.models import User
+    patient = get_object_or_404(User, id=patient_id)
+    return render(request, 'dashboard/caregiver_patient_detail.html', {'patient': patient})
+
+
+@login_required
 def patient_dashboard(request):
-    if not request.user.is_patient():
+    if not safe_has_role(request.user, 'is_patient'):
         messages.error(request, 'Patient access required')
         return redirect('dashboard:home')
 
@@ -126,7 +149,7 @@ def patient_dashboard(request):
     # ... (form logic remains same) ...
     from .forms import DailyActivityForm
     form = DailyActivityForm()
-    if not (request.user.is_doctor() or request.user.is_caregiver()):
+    if not (safe_has_role(request.user, 'is_doctor') or safe_has_role(request.user, 'is_caregiver')):
         form.fields.pop('user', None)
 
     # ... (patient age/vitals logic) ...
@@ -202,6 +225,14 @@ def tests_list(request):
 
 
 @login_required
+def cognitive_tests(request):
+    """Simple view to list cognitive tests (alias for tests_list where needed)."""
+    from .models import CognitiveTest
+    tests = CognitiveTest.objects.all()
+    return render(request, 'dashboard/cognitive_tests.html', {'tests': tests})
+
+
+@login_required
 def daily_activities(request):
     """List and manage today's activities for the logged-in patient, including recurring activities."""
     from .models import DailyActivity
@@ -249,10 +280,10 @@ def activity_create(request):
     else:
         initial = {}
         patient_id = request.GET.get('patient')
-        if patient_id and (request.user.is_doctor() or request.user.is_caregiver()):
+        if patient_id and (safe_has_role(request.user, 'is_doctor') or safe_has_role(request.user, 'is_caregiver')):
             initial['user'] = patient_id
         form = DailyActivityForm(initial=initial)
-        if not (request.user.is_doctor() or request.user.is_caregiver()):
+        if not (safe_has_role(request.user, 'is_doctor') or safe_has_role(request.user, 'is_caregiver')):
             form.fields.pop('user', None)
 
     return render(request, 'dashboard/daily_activity_form.html', {'form': form})

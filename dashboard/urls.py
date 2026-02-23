@@ -7,12 +7,14 @@ urlpatterns = [
     path('', views.home, name='home'),
     path('doctor/', views.doctor_dashboard, name='doctor_dashboard'),
     path('caregiver/', views.caregiver_dashboard, name='caregiver_dashboard'),
+    path('caregiver/patient/<int:patient_id>/', views.caregiver_patient_detail, name='caregiver_patient_detail'),
     path('patient/', views.patient_dashboard, name='patient_dashboard'),
 
     # Cognitive Tests
     path('patient/tests/', views.tests_list, name='tests_list'),
     path('patient/tests/<int:test_id>/', views.take_test, name='take_test'),
     path('patient/tests/<int:test_id>/result/<int:result_id>/', views.test_result, name='test_result'),
+    path('cognitive-tests/', views.cognitive_tests, name='cognitive_tests'),
 
     # Mood tracking
     path('patient/mood/', views.mood_view, name='mood'),

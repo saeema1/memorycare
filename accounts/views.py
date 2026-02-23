@@ -2,7 +2,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .forms import UserRegistrationForm, UserLoginForm, PatientProfileForm
+from .forms import UserRegistrationForm, UserLoginForm, PatientProfileForm, PatientRegistrationForm
+from django.contrib.auth.decorators import login_required
 from .models import Reminder
 
 
@@ -36,6 +37,24 @@ def register(request):
         form = UserRegistrationForm()
 
     return render(request, 'accounts/register.html', {'form': form})
+
+
+@login_required
+def register_patient(request):
+    from django.shortcuts import render, redirect
+    # PatientRegistrationForm is an alias to the patient/user registration form
+    if request.method == 'POST':
+        form = PatientRegistrationForm(request.POST)
+        if form.is_valid():
+            patient = form.save(commit=False)
+            # Ensure role uses model's choice value
+            patient.role = 'PATIENT'
+            patient.save()
+            return redirect('dashboard:doctor_dashboard')
+    else:
+        form = PatientRegistrationForm()
+
+    return render(request, 'accounts/register_patient.html', {'form': form})
 
 
 def user_logout(request):
