@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.views.decorators.http import require_POST
 
 
 def safe_has_role(user, attr_name):
@@ -36,8 +37,57 @@ def doctor_dashboard(request):
     if not safe_has_role(request.user, 'is_doctor'):
         messages.error(request, 'Doctor access required')
         return redirect('dashboard:home')
+    # Query patients and caregivers and pass them to the template
+    from accounts.models import User, Reminder
 
-    return render(request, 'dashboard/doctor_dashboard.html')
+    patients = User.objects.filter(role='PATIENT').order_by('last_name', 'first_name')
+    caregivers = User.objects.filter(role='CAREGIVER').order_by('last_name', 'first_name')
+
+    total_patients = patients.count()
+    total_caregivers = caregivers.count()
+
+    context = {
+        'patients': patients,
+        'caregivers': caregivers,
+        'total_patients': total_patients,
+        'total_caregivers': total_caregivers,
+    }
+
+    return render(request, 'dashboard/doctor_dashboard.html', context)
+
+
+@login_required
+@require_POST
+def assign_caregiver(request):
+    """Handle assigning/removing a caregiver for a patient (form POST from doctor dashboard)."""
+    # Only allow doctors (admins) to assign caregivers
+    if not safe_has_role(request.user, 'is_doctor'):
+        messages.error(request, 'Doctor access required')
+        return redirect('dashboard:home')
+
+    patient_id = request.POST.get('patient_id')
+    caregiver_id = request.POST.get('caregiver_id')
+
+    from accounts.models import User
+
+    patient = get_object_or_404(User, id=patient_id)
+    # Ensure patient role matches expectation (tolerant check)
+    if getattr(patient, 'role', '').upper() != 'PATIENT':
+        messages.error(request, 'Invalid patient selected')
+        return redirect('dashboard:doctor_dashboard')
+
+    if caregiver_id:
+        caregiver = get_object_or_404(User, id=caregiver_id)
+        if getattr(caregiver, 'role', '').upper() != 'CAREGIVER':
+            messages.error(request, 'Invalid caregiver selected')
+            return redirect('dashboard:doctor_dashboard')
+        patient.assigned_caregiver = caregiver
+    else:
+        patient.assigned_caregiver = None
+
+    patient.save()
+    messages.success(request, 'Caregiver assignment updated')
+    return redirect('dashboard:doctor_dashboard')
 
 
 @login_required

@@ -35,23 +35,24 @@ def user_login(request):
 
 def login_view(request):
     """Authenticate and redirect users based on their role."""
+    # Use the project's AuthenticationForm-compatible form so the template
+    # renders fields and CSRF works correctly.
     if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-
-        user = authenticate(request, username=username, password=password)
-
-        if user is not None:
+        form = UserLoginForm(request, data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
             login(request, user)
-
-            if getattr(user, 'role', '').upper() == 'DOCTOR':
+            role = getattr(user, 'role', '').upper()
+            if role == 'DOCTOR':
                 return redirect('dashboard:doctor_dashboard')
-            elif getattr(user, 'role', '').upper() == 'CAREGIVER':
+            elif role == 'CAREGIVER':
                 return redirect('dashboard:caregiver_dashboard')
             else:
                 return redirect('dashboard:patient_dashboard')
+    else:
+        form = UserLoginForm(request)
 
-    return render(request, 'accounts/login.html')
+    return render(request, 'accounts/login.html', {'form': form})
 
 
 def logout_view(request):
