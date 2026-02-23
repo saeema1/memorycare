@@ -5,13 +5,21 @@
 
 {% block content %}
 <div class="mb-4">
-    <h1 class="text-xl font-bold">Good Morning, {{ request.user.first_name }}! 👋</h1>
+    <h1 class="text-xl font-bold">Good Morning, {{ request.user.first_name|default:"Eleanor" }}! 👋</h1>
     <p class="text-muted">Here's your wellness overview for today</p>
 </div>
 
 <!-- Feature Cards Grid (4 Columns) -->
-<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 32px;">
-
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 32px;">
+    <!-- Cognitive Test -->
+    <div class="card clickable" onclick="openModal('test-modal')"
+        style="background: white; cursor: pointer; border: 1px solid #DBEAFE; background: #EFF6FF;">
+        <div class="feature-icon-box" style="background: white; color: var(--primary-color);">
+            <i class="fas fa-brain"></i>
+        </div>
+        <h3 class="font-bold text-lg mb-4">Cognitive Test</h3>
+        <p class="text-sm text-muted">Start daily exercise</p>
+    </div>
 
     <!-- Daily Activities -->
     <a href="{% url 'dashboard:daily_activities' %}" class="card"
@@ -94,7 +102,8 @@
                         style="font-size: 12px; color: var(--text-light); font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">
                         {{ item.type|title }}</div>
                     <div style="font-weight: 700; color: var(--text-dark);">{{ item.title }}</div>
-
+                    <div style="font-size: 13px; color: var(--text-light);"><i class="far fa-clock"></i> {{
+                        item.time|time:"g:i A" }}</div>
                 </div>
                 <div
                     style="width: 32px; height: 32px; background: {% if item.completed %}#bbf7d0{% else %}#f3f4f6{% endif %}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: {% if item.completed %}#166534{% else %}var(--text-light){% endif %};">
@@ -143,7 +152,33 @@
 </div>
 
 <!-- Modals -->
+<div id="test-modal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center;">
+    <div class="card" style="width: 600px; max-width: 90%; min-height: 400px; display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 class="font-bold text-xl">Cognitive Test</h2>
+            <button onclick="closeModal('test-modal')"
+                style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+        </div>
 
+        <div id="test-content" style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+            <p class="mb-4 text-center">Your daily exercises are ready.</p>
+            <!-- Test List for Selection -->
+            <div id="test-selection-list" style="display: grid; gap: 10px;">
+                {% for test in cognitive_tests %}
+                <button class="btn btn-secondary" onclick="startTest({{ test.id }})"
+                    style="width: 100%; justify-content: space-between;">
+                    {{ test.name }} <i class="fas fa-chevron-right"></i>
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div id="test-footer" style="padding-top: 20px; border-top: 1px solid var(--border-color); margin-top: 20px;">
+            <!-- Progress or buttons go here -->
+        </div>
+    </div>
+</div>
 
 <script>
     function openModal(id) {
@@ -172,6 +207,77 @@
         });
     }
 
+    // Cognitive Test Logic
+    let currentTestId = null;
+    let currentIdx = 0;
 
+    function startTest(testId) {
+        currentTestId = testId;
+        currentIdx = 0;
+        loadQuestion(0);
+    }
+
+    function loadQuestion(idx) {
+        fetch(`{% url 'dashboard:test_ajax_question' 0 %}`.replace('0', currentTestId) + `?q=${idx}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.ok) {
+                    document.getElementById('test-content').innerHTML = `
+                    <div style="margin-bottom: 10px;">
+                        <small>Question ${idx + 1} / ${data.total || '?'}</small>
+                        <div style="height: 6px; background: #eee; border-radius: 3px; margin-top: 5px;">
+                            <div style="height: 100%; background: var(--primary-color); border-radius: 3px; width: ${data.progress}%"></div>
+                        </div>
+                    </div>
+                    ${data.html}
+                `;
+                    // Hide footer during question? Or show next button?
+                    // The partial should probably handle the form. 
+                    // We'll attach a submit handler to the form in the partial if possible, 
+                    // or we can wrap the partial in a form here.
+                    // Let's manually add the submit button logic here if the partial doesn't include it.
+                }
+            });
+    }
+
+    function submitAnswer(idx, answer) {
+        const formData = new FormData();
+        formData.append('idx', idx);
+        formData.append('answer', answer);
+
+        fetch(`{% url 'dashboard:test_ajax_answer' 0 %}`.replace('0', currentTestId), {
+            method: 'POST',
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+            body: formData
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.ok) {
+                    if (data.finished) {
+                        document.getElementById('test-content').innerHTML = `
+                        <div style="text-align: center; padding: 40px;">
+                            <div style="font-size: 60px; margin-bottom: 20px;">🏆</div>
+                            <h2>Test Complete!</h2>
+                            <p class="text-xl">You scored <strong>${data.score} / ${data.max_score}</strong></p>
+                            <button class="btn mt-4" onclick="closeModal('test-modal')">Close</button>
+                        </div>
+                    `;
+                    } else {
+                        // Load next question (data.html might be returned or we request it)
+                        if (data.html) {
+                            document.getElementById('test-content').innerHTML = `
+                            <div style="margin-bottom: 10px;">
+                                <small>Question ${idx + 2} / ${data.total || '?'}</small> <!-- idx is previous, so +2 for next human readable -->
+                                <div style="height: 6px; background: #eee; border-radius: 3px; margin-top: 5px;">
+                                    <div style="height: 100%; background: var(--primary-color); border-radius: 3px; width: ${data.progress}%"></div>
+                                </div>
+                            </div>
+                            ${data.html}
+                        `;
+                        }
+                    }
+                }
+            });
+    }
 </script>
 {% endblock %}

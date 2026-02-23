@@ -7,9 +7,6 @@ urlpatterns = [
     path('', views.home, name='home'),
     path('login/', views.user_login, name='login'),
     path('register/', views.register, name='register'),
-    path('register/patient/', views.register_patient, name='register_patient'),
-    path('register/caregiver/', views.register_caregiver, name='register_caregiver'),
-
     path('logout/', views.user_logout, name='logout'),
 
     # Patient-specific

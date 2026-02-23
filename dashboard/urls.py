@@ -6,19 +6,13 @@ app_name = 'dashboard'
 urlpatterns = [
     path('', views.home, name='home'),
     path('doctor/', views.doctor_dashboard, name='doctor_dashboard'),
-    path('doctor/assign-caregiver/', views.assign_caregiver, name='assign_caregiver'),
     path('caregiver/', views.caregiver_dashboard, name='caregiver_dashboard'),
-    path('caregiver/patient/<int:patient_id>/', views.caregiver_patient_detail, name='caregiver_patient_detail'),
     path('patient/', views.patient_dashboard, name='patient_dashboard'),
 
-
-
     # Cognitive Tests
-    path('patient/tests/', views.cognitive_tests, name='cognitive_tests'),
-    path('patient/tests/memory/', views.test_memory, name='test_memory'),
-    path('patient/tests/color/', views.test_color, name='test_color'),
-    path('patient/tests/mixed/', views.test_mixed, name='test_mixed'),
-    path('patient/tests/save/', views.save_test_result, name='save_test_result'),
+    path('patient/tests/', views.tests_list, name='tests_list'),
+    path('patient/tests/<int:test_id>/', views.take_test, name='take_test'),
+    path('patient/tests/<int:test_id>/result/<int:result_id>/', views.test_result, name='test_result'),
 
     # Mood tracking
     path('patient/mood/', views.mood_view, name='mood'),
@@ -32,5 +26,7 @@ urlpatterns = [
     path('patient/activities/create/ajax/', views.activity_create_ajax, name='activity_create_ajax'),
     path('patient/dashboard/data/ajax/', views.patient_dashboard_data_ajax, name='patient_dashboard_data_ajax'),
 
-
+    # Cognitive Tests AJAX
+    path('patient/tests/<int:test_id>/ajax/question/', views.test_ajax_question, name='test_ajax_question'),
+    path('patient/tests/<int:test_id>/ajax/answer/', views.test_ajax_answer, name='test_ajax_answer'),
 ]

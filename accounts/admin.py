@@ -20,7 +20,7 @@ class UserAdmin(BaseUserAdmin):
             'fields': ('role',)
         }),
         ('Personal Information', {
-            'fields': ('phone_number', 'date_of_birth', 'gender', 'address')
+            'fields': ('phone_number', 'date_of_birth', 'address')
         }),
         ('Assignments', {
             'fields': ('assigned_doctor', 'assigned_caregiver'),
@@ -31,7 +31,7 @@ class UserAdmin(BaseUserAdmin):
             'classes': ('collapse',)
         }),
         ('Caregiver Information', {
-            'fields': ('specialization', 'license_number', 'caregiving_experience_years', 'relationship_to_patient'),
+            'fields': ('specialization', 'license_number'),
             'classes': ('collapse',)
         }),
     )
@@ -41,7 +41,7 @@ class UserAdmin(BaseUserAdmin):
             'fields': ('role',)
         }),
         ('Personal Information', {
-            'fields': ('phone_number', 'date_of_birth', 'gender', 'address')
+            'fields': ('phone_number', 'date_of_birth', 'address')
         }),
     )
     

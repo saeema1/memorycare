@@ -99,7 +99,7 @@
                     <div style="flex: 1;">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                             <h4 class="font-bold" style="font-size: 15px; color: var(--text-dark);">
-                                alert {{ alert.patient.last_name }}</h4>
+                                {{ alert.patient.first_name }} {{ alert.patient.last_name }}</h4>
                             <span class="text-xs text-muted">{{ alert.time|timesince }} ago</span>
                         </div>
                         <p style="font-weight: 600; color: var(--text-dark); margin-bottom: 4px;">{{ alert.title }}</p>

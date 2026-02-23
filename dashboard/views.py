@@ -5,11 +5,11 @@ from django.contrib import messages
 
 @login_required
 def home(request):
-    if request.user.is_doctor:
+    if request.user.is_doctor():
         return redirect('dashboard:doctor_dashboard')
-    elif request.user.is_caregiver:
+    elif request.user.is_caregiver():
         return redirect('dashboard:caregiver_dashboard')
-    elif request.user.is_patient:
+    elif request.user.is_patient():
         return redirect('dashboard:patient_dashboard')
     else:
         messages.error(request, 'Invalid role')
@@ -18,165 +18,48 @@ def home(request):
 
 @login_required
 def doctor_dashboard(request):
-    if not request.user.is_doctor:
+    if not request.user.is_doctor():
         messages.error(request, 'Doctor access required')
         return redirect('dashboard:home')
-    
-    from accounts.models import User
-    
-    patients = User.objects.filter(role='PATIENT').select_related('assigned_doctor')
-    caregivers = User.objects.filter(role='CAREGIVER')
-    
-    # For each patient, we might want to know their assigned caregiver (which is a reverse relation check or stored field).
-    # Based on User model, patients have 'patients_under_caregiver' reverse relation from caregiver to patient? 
-    # Wait, Step 240 model view showed:
-    # caregiving_experience_years... 
-    # User model didn't explicitly show a 'caregiver' FK on the patient, but the Caregiver dashboard 
-    # uses `request.user.patients_under_caregiver.all()`. 
-    # This implies a ManyToMany or ForeignKey from Patient to Caregiver, OR Caregiver to Patient.
-    # Let's check accounts/models.py again or assume/fix.
-    # Actually, looking at the previous caregiver dashboard logic: 
-    # caregivers see `request.user.patients_under_caregiver.all()`
-    # That implies the related_name on the Patient->Caregiver FK is `patients_under_caregiver`.
-    # Let's quickly verify the user model relationship name if possible, OR assume valid structure.
-    # Step 240 showed: `class User(AbstractUser)`... I didn't see the specific FK field for caregiver assignment in the first 40 lines.
-    # I will assume there is a field on Patient pointing to Caregiver? Or Caregiver pointing to Patient?
-    # Usually it's Patient.caregiver = FK(Caregiver).
-    # If `request.user.patients_under_caregiver` works for Caregiver, then `User` (Caregiver) has many `patients_under_caregiver`.
-    # So `User` (Patient) likely has a FK `caregiver` related_name=`patients_under_caregiver`.
-    
-    context = {
-        'patients': patients,
-        'caregivers': caregivers,
-    }
 
-    return render(request, 'dashboard/doctor_dashboard.html', context)
-
-
-@login_required
-def assign_caregiver(request):
-    if not request.user.is_doctor:
-        messages.error(request, 'Access denied')
-        return redirect('dashboard:home')
-        
-    if request.method == 'POST':
-        from accounts.models import User
-        patient_id = request.POST.get('patient_id')
-        caregiver_id = request.POST.get('caregiver_id')
-        
-        try:
-            patient = User.objects.get(id=patient_id, role='PATIENT')
-            if caregiver_id:
-                caregiver = User.objects.get(id=caregiver_id, role='CAREGIVER')
-                patient.assigned_caregiver = caregiver
-                patient.save()
-                messages.success(request, f'Assigned {caregiver.first_name} to {patient.first_name}.')
-            else:
-                patient.assigned_caregiver = None
-                patient.save()
-                messages.info(request, f'Unassigned caregiver from {patient.first_name}.')
-        except User.DoesNotExist:
-            messages.error(request, 'User not found')
-        except Exception as e:
-            messages.error(request, f'Error: {str(e)}')
-            
-    return redirect('dashboard:doctor_dashboard')
+    return render(request, 'dashboard/doctor_dashboard.html')
 
 
 @login_required
 def caregiver_dashboard(request):
-    """Dashboard for caregivers showing assigned patients and alerts."""
-    from .models import Alert, TestResult
-    if not request.user.is_caregiver:
+    if not request.user.is_caregiver():
         messages.error(request, 'Caregiver access required')
         return redirect('dashboard:home')
 
-    # Fetch assigned patients
-    patients = request.user.patients_under_caregiver.all()
-    
-    # Fetch alerts for assigned patients
-    from .utils import generate_caregiver_alerts
-    alerts = generate_caregiver_alerts(request.user)
-    
-    # Optional: If you still want to include persistent Alert objects, you can merge them.
-    # But for now, we rely on the dynamic ones as requested "update automatically based on patient data".
-    # We can assume older 'Alert' model usage is superseded or complementary if we merge.
-    # Let's just use the dynamic ones for the "active" display to be responsive.
-
-    # Calculated summary metrics could go here
+    # Patients queryset: include all users with role 'PATIENT'
+    from accounts.models import User, Reminder
+    patients = User.objects.filter(role='PATIENT').order_by('last_name', 'first_name')
     total_patients = patients.count()
-    active_alerts = len(alerts)
-    
-    # Fetch recent test results for assigned patients
-    recent_results = TestResult.objects.filter(user__in=patients).select_related('user', 'test').order_by('-created_at')[:5]
-    
+
+    # Active alerts (unread reminders) for these patients
+    active_alerts = Reminder.objects.filter(patient__in=patients, read=False).count()
+
+    # Recent alerts (most recent reminders for these patients)
+    alerts = Reminder.objects.filter(patient__in=patients).order_by('-scheduled_for')[:5]
+
+    # Recent cognitive test results for these patients
+    from .models import TestResult
+    recent_results = TestResult.objects.filter(user__in=patients).order_by('-created_at')[:8]
+
     context = {
         'patients': patients,
-        'alerts': alerts,
-        'recent_results': recent_results,
         'total_patients': total_patients,
         'active_alerts': active_alerts,
+        'alerts': alerts,
+        'recent_results': recent_results,
     }
+
     return render(request, 'dashboard/caregiver_dashboard.html', context)
-    
-@login_required
-def caregiver_patient_detail(request, patient_id):
-    """Deep dive into a specific patient's status for the caregiver."""
-    from accounts.models import User
-    from .models import DailyActivity, TestResult, MoodEntry
-    from django.utils import timezone
-    
-    if not request.user.is_caregiver:
-        messages.error(request, 'Access denied')
-        return redirect('dashboard:home')
-        
-    patient = get_object_or_404(User, id=patient_id)
-    
-    # Permission check: Ensure this patient is assigned to this caregiver
-    # Use ID comparison to be safe
-    if patient.assigned_caregiver_id != request.user.id:
-        messages.error(request, 'You are not assigned to this patient.')
-        return redirect('dashboard:caregiver_dashboard')
-
-    # Fetch Data
-    today = timezone.localdate()
-    # Fetch activities and filter in python to handle recurrences
-    activities = DailyActivity.objects.filter(user=patient).order_by('scheduled_for')
-    activities_today = [a for a in activities if a.occurs_on(today)]
-    
-    # Test Results
-    test_results = TestResult.objects.filter(user=patient).order_by('-created_at')[:10]
-    
-    # Mood
-    recent_moods = MoodEntry.objects.filter(user=patient).order_by('-created_at')[:7]
-    
-    # Alerts/Reminders - Only upcoming or today's
-    reminders = patient.reminders.filter(scheduled_for__date=today).order_by('scheduled_for')
-
-    # Calculate Health Score
-    from .utils import calculate_health_score
-    health_score = calculate_health_score(patient)
-
-    # Determine Patient Condition Label
-    if health_score >= 80: condition_label = "Stable"
-    elif health_score >= 60: condition_label = "Monitoring"
-    else: condition_label = "Declining"
-
-    context = {
-        'patient': patient,
-        'activities': activities_today,
-        'test_results': test_results,
-        'recent_moods': recent_moods,
-        'reminders': reminders,
-        'health_score': health_score,
-        'condition_label': condition_label,
-    }
-    return render(request, 'dashboard/caregiver_patient_detail.html', context)
 
 
 @login_required
 def patient_dashboard(request):
-    if not request.user.is_patient:
+    if not request.user.is_patient():
         messages.error(request, 'Patient access required')
         return redirect('dashboard:home')
 
@@ -185,40 +68,54 @@ def patient_dashboard(request):
     today = timezone.localdate()
     reminders_today = request.user.reminders.filter(scheduled_for__date=today).order_by('scheduled_for')
 
-    # Simple health score heuristic
-    from .utils import calculate_health_score
-    health_score = calculate_health_score(request.user)
+    # Simple health score heuristic (placeholder)
+    total_reminders = request.user.reminders.count()
+    unread_reminders = request.user.reminders.filter(read=False).count()
+    if total_reminders:
+        health_score = max(0, 100 - int((unread_reminders / total_reminders) * 100))
+    else:
+        health_score = 80  # default placeholder
 
-
+    # Fetch available cognitive tests from DB
+    from .models import CognitiveTest
+    # Seed tests if missing
+    if not CognitiveTest.objects.exists():
+        # Test 1: Memory Recall (Mixed types)
+        CognitiveTest.objects.create(
+            name='Memory Recall',
+            description='Test your short-term memory with varied questions.',
+            questions=[
+                {'type': 'choice', 'text': 'Which of these is a fruit?', 'choices': ['Carrot', 'Apple', 'Bread'], 'answer': 'Apple'},
+                {'type': 'boolean', 'text': 'Is the sky blue on a clear day?', 'choices': ['True', 'False'], 'answer': 'True'},
+                {'type': 'choice', 'text': 'What comes after Monday?', 'choices': ['Sunday', 'Tuesday', 'Wednesday'], 'answer': 'Tuesday'},
+                {'type': 'text', 'text': 'Type the number five.', 'answer': '5'}
+            ]
+        )
+        # Test 2: Pattern & Logic
+        CognitiveTest.objects.create(
+            name='Pattern & Logic',
+            description='Simple logic puzzles to keep your mind sharp.',
+            questions=[
+                {'type': 'choice', 'text': 'Complete the sequence: 2, 4, 6, _', 'choices': ['7', '8', '9'], 'answer': '8'},
+                {'type': 'boolean', 'text': 'Is ice hot?', 'choices': ['True', 'False'], 'answer': 'False'},
+                {'type': 'choice', 'text': 'Which shape is round?', 'choices': ['Square', 'Circle', 'Triangle'], 'answer': 'Circle'}
+            ]
+        )
+    cognitive_tests = CognitiveTest.objects.all()[:5]
 
     # Today's scheduled activities (include recurrence)
     from .models import DailyActivity
     # Seed activities if user has none (ever)
-    # Updated seeding logic for a full daily schedule
-    std_time = timezone.now().replace(minute=0, second=0, microsecond=0)
-    
-    default_activities = [
-        {'name': 'Morning Routine', 'type': 'other', 'hour': 7, 'minute': 0},
-        {'name': 'Breakfast', 'type': 'meal', 'hour': 8, 'minute': 0},
-        {'name': 'Morning Medication', 'type': 'medication', 'hour': 8, 'minute': 30},
-        {'name': 'Light Exercise / Walk', 'type': 'exercise', 'hour': 10, 'minute': 0},
-        {'name': 'Lunch', 'type': 'meal', 'hour': 12, 'minute': 30},
-        {'name': 'Afternoon Rest', 'type': 'rest', 'hour': 14, 'minute': 0},
-        {'name': 'Dinner', 'type': 'meal', 'hour': 18, 'minute': 30},
-        {'name': 'Evening Medication', 'type': 'medication', 'hour': 20, 'minute': 0},
-        {'name': 'Bedtime Routine', 'type': 'rest', 'hour': 21, 'minute': 30},
-    ]
-
-    for item in default_activities:
-        # Check if this specific activity already exists for the user
-        if not DailyActivity.objects.filter(user=request.user, name=item['name']).exists():
-            DailyActivity.objects.create(
-                user=request.user,
-                name=item['name'],
-                activity_type=item['type'],
-                scheduled_for=std_time.replace(hour=item['hour'], minute=item['minute']),
-                recurrence='daily'
-            )
+    if not DailyActivity.objects.filter(user=request.user).exists():
+        std_time = timezone.now().replace(minute=0, second=0, microsecond=0)
+        # Morning Routine
+        DailyActivity.objects.create(user=request.user, name='Morning Medication', activity_type='medication', scheduled_for=std_time.replace(hour=8), recurrence='daily')
+        DailyActivity.objects.create(user=request.user, name='Breakfast', activity_type='meal', scheduled_for=std_time.replace(hour=8, minute=30), recurrence='daily')
+        # Afternoon
+        DailyActivity.objects.create(user=request.user, name='Afternoon Walk', activity_type='exercise', scheduled_for=std_time.replace(hour=14), recurrence='daily')
+        DailyActivity.objects.create(user=request.user, name='Lunch', activity_type='meal', scheduled_for=std_time.replace(hour=13), recurrence='daily')
+        # Evening
+        DailyActivity.objects.create(user=request.user, name='Evening Medication', activity_type='medication', scheduled_for=std_time.replace(hour=20), recurrence='daily')
 
     all_activities = DailyActivity.objects.filter(user=request.user).order_by('scheduled_for')
     activities = [a for a in all_activities if a.occurs_on(today)]
@@ -229,7 +126,7 @@ def patient_dashboard(request):
     # ... (form logic remains same) ...
     from .forms import DailyActivityForm
     form = DailyActivityForm()
-    if not (request.user.is_doctor or request.user.is_caregiver):
+    if not (request.user.is_doctor() or request.user.is_caregiver()):
         form.fields.pop('user', None)
 
     # ... (patient age/vitals logic) ...
@@ -246,7 +143,8 @@ def patient_dashboard(request):
     if latest_activity: candidates.append(latest_activity.updated_at or latest_activity.created_at)
     latest_reminder = request.user.reminders.order_by('-scheduled_for').first()
     if latest_reminder: candidates.append(latest_reminder.scheduled_for)
-
+    latest_test = request.user.test_results.order_by('-created_at').first()
+    if latest_test: candidates.append(latest_test.created_at)
     patient_last_activity = max(candidates) if candidates else None
 
     vitals = {}
@@ -273,26 +171,12 @@ def patient_dashboard(request):
     
     # Sort by time
     schedule_items.sort(key=lambda x: x['time'])
-    
-    # Pre-format time strings for display to avoid template issues
-    # Pre-format time strings for display to avoid template issues
-    import datetime
-    for item in schedule_items:
-        t = item['time']
-        if t:
-            # Format as "08:00 AM – 08:30 AM" (Synthesized 30 min duration as per user request)
-            start_str = t.strftime('%I:%M %p')
-            end_time = t + datetime.timedelta(minutes=30)
-            end_str = end_time.strftime('%I:%M %p')
-            item['time_display'] = f"{start_str} – {end_str}"
-        else:
-            item['time_display'] = 'Time not set'
 
     context = {
         'reminders_today': reminders_today,
         'health_score': health_score,
         'health_label': health_label,
-
+        'cognitive_tests': cognitive_tests,
         'activities': activities,
         'schedule': schedule_items,  # Passed to template
         'total_activities': total_activities,
@@ -310,14 +194,18 @@ def patient_dashboard(request):
     return render(request, 'dashboard/patient_dashboard.html', context)
 
 
-
+@login_required
+def tests_list(request):
+    from .models import CognitiveTest
+    tests = CognitiveTest.objects.all()
+    return render(request, 'dashboard/tests_list.html', {'tests': tests})
 
 
 @login_required
 def daily_activities(request):
     """List and manage today's activities for the logged-in patient, including recurring activities."""
     from .models import DailyActivity
-    if not request.user.is_patient:
+    if not request.user.is_patient():
         messages.error(request, 'Patient access required')
         return redirect('dashboard:home')
 
@@ -339,14 +227,14 @@ def activity_create(request):
     from accounts.models import User
 
     # Restrict patients from creating activities
-    if request.user.is_patient:
+    if request.user.is_patient():
         messages.error(request, 'Patients cannot create activities.')
         return redirect('dashboard:daily_activities')
 
     if request.method == 'POST':
         form = DailyActivityForm(request.POST)
         # If non-staff (patient), remove user field from the form and force activity to belong to them
-        if not (request.user.is_doctor or request.user.is_caregiver):
+        if not (request.user.is_doctor() or request.user.is_caregiver()):
             form.fields.pop('user', None)
             if form.is_valid():
                 a = form.save(commit=False)
@@ -361,10 +249,10 @@ def activity_create(request):
     else:
         initial = {}
         patient_id = request.GET.get('patient')
-        if patient_id and (request.user.is_doctor or request.user.is_caregiver):
+        if patient_id and (request.user.is_doctor() or request.user.is_caregiver()):
             initial['user'] = patient_id
         form = DailyActivityForm(initial=initial)
-        if not (request.user.is_doctor or request.user.is_caregiver):
+        if not (request.user.is_doctor() or request.user.is_caregiver()):
             form.fields.pop('user', None)
 
     return render(request, 'dashboard/daily_activity_form.html', {'form': form})
@@ -385,7 +273,85 @@ def toggle_activity(request, activity_id):
     return render(request, 'dashboard/toggle_activity.html', {'activity': a})
 
 
+@login_required
+def take_test(request, test_id):
+    """Per-question flow: show one question per page, store answers in session until final submission."""
+    from .models import CognitiveTest, TestResult
+    test = CognitiveTest.objects.get(id=test_id)
+    questions = test.questions or []
+    total = len(questions)
 
+    # determine current question index from GET or POST
+    if request.method == 'POST':
+        # get current index from hidden field
+        idx = int(request.POST.get('idx', 0))
+        key = f'q{idx}'
+        answers = request.session.get(f'test_{test_id}_answers', {})
+        answers[key] = request.POST.get(key)
+        request.session[f'test_{test_id}_answers'] = answers
+
+        # move to next question
+        next_idx = idx + 1
+        if next_idx >= total:
+            # finalize and score
+            score = 0
+            max_score = total
+            for i, q in enumerate(questions):
+                user_ans = answers.get(f'q{i}')
+                correct = q.get('answer')
+                if correct is not None and user_ans is not None and str(user_ans).strip() == str(correct).strip():
+                    score += 1
+            result = TestResult.objects.create(
+                user=request.user,
+                test=test,
+                score=score,
+                max_score=max_score,
+                answers=answers,
+            )
+            # clear session answers
+            try:
+                del request.session[f'test_{test_id}_answers']
+            except KeyError:
+                pass
+            return redirect('dashboard:test_result', test_id=test.id, result_id=result.id)
+        else:
+            # redirect to same view with next question index
+            return redirect(f"{request.path}?q={next_idx}")
+
+    # GET
+    q_index = request.GET.get('q')
+    try:
+        idx = int(q_index) if q_index is not None else 0
+    except ValueError:
+        idx = 0
+    if idx < 0 or (total and idx >= total):
+        idx = 0
+
+    question = questions[idx] if total else None
+    answers = request.session.get(f'test_{test_id}_answers', {})
+    progress = 0 if total == 0 else int(((idx + 1) / total) * 100) if total else 0
+    current_answer = answers.get(f'q{idx}')
+    prev_idx = idx - 1 if idx > 0 else None
+    is_last = (idx + 1 == total)
+
+    return render(request, 'dashboard/take_test.html', {
+        'test': test,
+        'question': question,
+        'idx': idx,
+        'total': total,
+        'progress': progress,
+        'answers': answers,
+        'current_answer': current_answer,
+        'prev_idx': prev_idx,
+        'is_last': is_last,
+    })
+
+
+@login_required
+def test_result(request, test_id, result_id):
+    from .models import TestResult
+    result = TestResult.objects.get(id=result_id, user=request.user, test_id=test_id)
+    return render(request, 'dashboard/test_result.html', {'result': result})
 
 
 @login_required
@@ -439,7 +405,64 @@ def toggle_activity_ajax(request, activity_id):
     return JsonResponse({'ok': False}, status=400)
 
 
+@login_required
+def test_ajax_question(request, test_id):
+    """Return rendered HTML for a question (partial) for AJAX insertion."""
+    from django.http import JsonResponse
+    from .models import CognitiveTest
+    test = get_object_or_404(CognitiveTest, id=test_id)
+    q_index = int(request.GET.get('q', 0))
+    questions = test.questions or []
+    total = len(questions)
+    if q_index < 0 or (total and q_index >= total):
+        return JsonResponse({'ok': False}, status=400)
+    question = questions[q_index]
+    progress = 0 if total == 0 else int(((q_index + 1) / total) * 100)
+    html = render(request, 'dashboard/partials/test_question.html', {'question': question, 'idx': q_index, 'total': total, 'progress': progress}).content.decode('utf-8')
+    return JsonResponse({'ok': True, 'html': html, 'progress': progress})
 
+
+@login_required
+def test_ajax_answer(request, test_id):
+    """Accept answer via AJAX, store in session, return next question html or final result."""
+    from django.http import JsonResponse
+    from .models import CognitiveTest, TestResult
+    test = get_object_or_404(CognitiveTest, id=test_id)
+    questions = test.questions or []
+    total = len(questions)
+    if request.method != 'POST':
+        return JsonResponse({'ok': False}, status=400)
+    try:
+        idx = int(request.POST.get('idx', 0))
+    except (TypeError, ValueError):
+        idx = 0
+    answer_val = request.POST.get('answer')
+    answers = request.session.get(f'test_{test_id}_answers', {})
+    answers[f'q{idx}'] = answer_val
+    request.session[f'test_{test_id}_answers'] = answers
+
+    next_idx = idx + 1
+    if next_idx >= total:
+        # finalize
+        score = 0
+        max_score = total
+        for i, q in enumerate(questions):
+            user_ans = answers.get(f'q{i}')
+            correct = q.get('answer')
+            if correct is not None and user_ans is not None and str(user_ans).strip() == str(correct).strip():
+                score += 1
+        result = TestResult.objects.create(user=request.user, test=test, score=score, max_score=max_score, answers=answers)
+        try:
+            del request.session[f'test_{test_id}_answers']
+        except KeyError:
+            pass
+        return JsonResponse({'ok': True, 'finished': True, 'score': score, 'max_score': max_score, 'result_id': result.id})
+    else:
+        # return next question html
+        question = questions[next_idx]
+        progress = int(((next_idx + 1) / total) * 100)
+        html = render(request, 'dashboard/partials/test_question.html', {'question': question, 'idx': next_idx, 'total': total, 'progress': progress}).content.decode('utf-8')
+        return JsonResponse({'ok': True, 'finished': False, 'html': html, 'progress': progress})
 
 
 @login_required
@@ -447,10 +470,10 @@ def patient_dashboard_data_ajax(request):
     """Return patient-specific dashboard summary data for charts and live updates."""
     from django.http import JsonResponse
     from django.utils import timezone
-    from .models import DailyActivity, MoodEntry
+    from .models import DailyActivity, MoodEntry, TestResult
     import datetime
 
-    if not request.user.is_patient:
+    if not request.user.is_patient():
         return JsonResponse({'ok': False}, status=403)
 
     today = timezone.localdate()
@@ -477,7 +500,10 @@ def patient_dashboard_data_ajax(request):
         else:
             mood_data.append(None)
 
-
+    # Cognitive progress - last 10 test results (score percentage)
+    results = list(request.user.test_results.order_by('-created_at')[:10])[::-1]
+    cog_labels = [r.created_at.date().isoformat() for r in results]
+    cog_data = [round((r.score / r.max_score) * 100, 2) if r.max_score else 0 for r in results]
 
     # Today's activities
     from django.utils import timezone as djtz
@@ -505,7 +531,9 @@ def patient_dashboard_data_ajax(request):
     sleep_rate = adherence_rate(recent_acts.filter(activity_type='rest'))
     social_rate = adherence_rate(recent_acts.filter(activity_type='other'))
 
-
+    # Cognitive performance (average of last 10 results)
+    cog_values = [round((r.score / r.max_score) * 100, 2) for r in request.user.test_results.order_by('-created_at')[:10] if r.max_score]
+    cognitive_avg = int(sum(cog_values) / len(cog_values)) if cog_values else None
 
     # Mood normalized 1-5 -> 0-100
     mood_vals = [v for v in mood_data if v is not None]
@@ -517,11 +545,12 @@ def patient_dashboard_data_ajax(request):
     components = {
         'medication': med_rate,
         'exercise': exercise_rate,
+        'cognitive': cognitive_avg,
         'sleep': sleep_rate,
         'social': social_rate,
         'mood': mood_avg,
     }
-    weights = {'medication': 0.35, 'exercise': 0.25, 'sleep': 0.20, 'social': 0.1, 'mood': 0.1}
+    weights = {'medication': 0.25, 'exercise': 0.2, 'cognitive': 0.3, 'sleep': 0.15, 'social': 0.1, 'mood': 0.2}
     # Note: mood treated as optional extra; we'll build weighted average from available components
     total_weight = 0.0
     score_accum = 0.0
@@ -538,7 +567,8 @@ def patient_dashboard_data_ajax(request):
         recs.append('Medication adherence low — try setting reminders or ask your caregiver for help.')
     if exercise_rate is not None and exercise_rate < 50:
         recs.append('Increase light physical activity today (short walk, stretching).')
-
+    if cognitive_avg is not None and cognitive_avg < 60:
+        recs.append('Try short cognitive exercises to improve memory and attention.')
     if mood_avg is not None and mood_avg < 40:
         recs.append('Mood has been low this week — consider contacting your caregiver or try a relaxation exercise.')
     if sleep_rate is not None and sleep_rate < 50:
@@ -564,7 +594,7 @@ def patient_dashboard_data_ajax(request):
         'health_components': components,
         'recommendations': recs,
         'mood': {'labels': mood_labels, 'data': mood_data},
-
+        'cognitive': {'labels': cog_labels, 'data': cog_data},
         'activities': activities_list,
         'reminders': reminders_list,
         'schedule': schedule,
@@ -578,7 +608,7 @@ def activity_create_ajax(request):
     from .forms import DailyActivityForm
 
     # Restrict patients from creating activities
-    if request.user.is_patient:
+    if request.user.is_patient():
         return JsonResponse({'ok': False, 'error': 'Permission denied'}, status=403)
 
     if request.method != 'POST':
@@ -587,7 +617,7 @@ def activity_create_ajax(request):
     post = request.POST.copy()
     form = DailyActivityForm(post)
     # If patient, don't allow setting user via form
-    if not (request.user.is_doctor or request.user.is_caregiver):
+    if not (request.user.is_doctor() or request.user.is_caregiver()):
         if 'user' in form.fields:
             form.fields.pop('user')
 
@@ -604,77 +634,3 @@ def activity_create_ajax(request):
         a = form.save()
         return JsonResponse({'ok': True, 'activity': {'id': a.id, 'name': a.name, 'scheduled_for': a.scheduled_for.isoformat(), 'completed': a.completed, 'type': a.activity_type}})
     return JsonResponse({'ok': False, 'errors': form.errors}, status=400)
-
-
-@login_required
-def cognitive_tests(request):
-    """List available cognitive tests for the patient."""
-    if not request.user.is_patient:
-        messages.error(request, 'Patient access required')
-        return redirect('dashboard:home')
-    
-    from django.utils import timezone
-    from .models import TestResult
-    
-    today = timezone.now().date()
-    # Get tests completed today
-    completed_today = TestResult.objects.filter(
-        user=request.user, 
-        created_at__date=today
-    ).values_list('test__name', flat=True)
-    
-    # Mock tests for display
-    tests = [
-        {'id': 'memory', 'name': 'Memory Test', 'description': 'Exercise your short-term memory by identifying objects and recalling words.', 'icon': 'fa-puzzle-piece', 'color': 'bg-blue-100 text-blue-600', 'url_name': 'test_memory'},
-        {'id': 'color', 'name': 'Color Recognition Test', 'description': 'Identify colors correctly to keep your visual perception sharp.', 'icon': 'fa-eye', 'color': 'bg-yellow-100 text-yellow-600', 'url_name': 'test_color'},
-        {'id': 'mixed', 'name': 'Mixed Simple Test', 'description': 'A variety of logic, attention, and memory questions.', 'icon': 'fa-random', 'color': 'bg-green-100 text-green-600', 'url_name': 'test_mixed'},
-    ]
-    
-    # Mark completed
-    for t in tests:
-        if t['name'] in completed_today:
-            t['completed'] = True
-    
-    return render(request, 'dashboard/cognitive_tests.html', {'tests': tests})
-
-
-@login_required
-def test_memory(request):
-    return render(request, 'dashboard/test_memory.html')
-
-@login_required
-def test_color(request):
-    return render(request, 'dashboard/test_color.html')
-
-@login_required
-def test_mixed(request):
-    return render(request, 'dashboard/test_mixed.html')
-
-@login_required
-def save_test_result(request):
-    from django.http import JsonResponse
-    from .models import TestResult, CognitiveTest
-    import json
-    
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            test_name = data.get('test_name')
-            score = data.get('score')
-            max_score = data.get('max_score')
-            
-            # Get or create the test definition
-            test_def, _ = CognitiveTest.objects.get_or_create(name=test_name)
-            
-            # Save result
-            TestResult.objects.create(
-                user=request.user,
-                test=test_def,
-                score=score,
-                max_score=max_score,
-                answers=data.get('answers', {})
-            )
-            return JsonResponse({'ok': True})
-        except Exception as e:
-            return JsonResponse({'ok': False, 'error': str(e)}, status=400)
-    return JsonResponse({'ok': False}, status=400)

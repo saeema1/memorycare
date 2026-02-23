@@ -66,7 +66,8 @@
                     style="font-size: 0.875rem; font-weight: 600; color: {% if 'medication' in a.activity_type %}#2563EB{% elif 'meal' in a.activity_type %}#D97706{% elif 'exercise' in a.activity_type %}#059669{% else %}#6B7280{% endif %}; text-transform: uppercase; margin-bottom: 0.25rem; letter-spacing: 0.05em;">
                     {{ a.get_activity_type_display }}
                 </div>
-
+                <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-dark); margin-bottom: 0.25rem;">{{
+                    a.name }}</h3>
                 <p
                     style="color: var(--text-light); display: flex; align-items: center; gap: 0.5rem; font-size: 0.95rem;">
                     <i class="far fa-clock"></i> {{ a.scheduled_for|time:"g:i A" }}
@@ -75,19 +76,20 @@
 
             <!-- Action/Status -->
             <div>
-                <div class="action-btn">
+                <form method="post" action="{% url 'dashboard:toggle_activity' a.id %}">{% csrf_token %}
+                    <input type="hidden" name="next" value="{% url 'dashboard:daily_activities' %}">
                     {% if a.completed %}
-                    <button onclick="toggleActivity({{ a.id }})" id="btn-{{ a.id }}"
+                    <button type="submit"
                         style="width: 48px; height: 48px; border-radius: 50%; background: #D1FAE5; color: #059669; border: none; font-size: 1.25rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">
                         <i class="fas fa-check"></i>
                     </button>
                     {% else %}
-                    <button onclick="toggleActivity({{ a.id }})" id="btn-{{ a.id }}"
+                    <button type="submit"
                         style="width: 48px; height: 48px; border-radius: 50%; background: #F3F4F6; color: #9CA3AF; border: 2px solid #E5E7EB; font-size: 1.25rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s hover:background: #E5E7EB;">
                         <i class="fas fa-check" style="opacity: 0.5;"></i>
                     </button>
                     {% endif %}
-                </div>
+                </form>
             </div>
         </div>
         {% endfor %}
@@ -101,72 +103,17 @@
 </div>
 
 <script>
-    function updateProgress() {
-        // Calculate progress based on button state (green means completed)
-        const total = document.querySelectorAll('.schedule-list .card').length;
-        if (total === 0) return;
-
+    // Compute progress on page load
+    (function () {
+        const items = document.querySelectorAll('.activity-list li');
+        const total = items.length;
         let completed = 0;
-        document.querySelectorAll('.schedule-list button').forEach(btn => {
-            // Check if button has green background color indicating completion
-            if (btn.style.background === 'rgb(209, 250, 229)' || btn.style.background === '#D1FAE5') {
-                completed++;
-            }
-        });
-
-        const pct = Math.round((completed / total) * 100);
-
+        items.forEach(li => { if (li.querySelector('.activity-completed')) completed += 1; });
+        const pct = total === 0 ? 0 : Math.round((completed / total) * 100);
         document.getElementById('completed-count').textContent = completed;
         document.getElementById('total-count').textContent = total;
         document.getElementById('percent-number').textContent = pct + '%';
         document.getElementById('percent-bar').style.width = pct + '%';
-    }
-
-    function toggleActivity(id) {
-        // Optimistic UI update
-        const btn = document.getElementById('btn-' + id);
-        const card = btn.closest('.card');
-        const isCompleted = btn.style.color === 'rgb(5, 150, 105)' || btn.style.color === '#059669'; // check green text
-
-        // Toggle visuals immediately
-        if (!isCompleted) {
-            // Mark as done
-            btn.style.background = '#D1FAE5';
-            btn.style.color = '#059669';
-            btn.style.border = 'none';
-            btn.innerHTML = '<i class="fas fa-check"></i>';
-            card.style.backgroundColor = '#F9FAFB';
-            card.style.opacity = '0.8';
-        } else {
-            // Mark as text
-            btn.style.background = '#F3F4F6';
-            btn.style.color = '#9CA3AF';
-            btn.style.border = '2px solid #E5E7EB';
-            btn.innerHTML = '<i class="fas fa-check" style="opacity: 0.5;"></i>';
-            card.style.backgroundColor = '';
-            card.style.opacity = '1';
-        }
-
-        updateProgress();
-
-        // Send AJAX request
-        fetch(`{% url 'dashboard:toggle_activity_ajax' 0 %}`.replace('0', id), {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}'
-            }
-        })
-            .then(res => res.json())
-            .then(data => {
-                if (!data.ok) {
-                    // Revert if error (simple reload or alert)
-                    alert("Error updating activity status");
-                    location.reload();
-                }
-            });
-    }
-
-    // Initialize progress on load
-    document.addEventListener('DOMContentLoaded', updateProgress);
+    })();
 </script>
 {% endblock %}
