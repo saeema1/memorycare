@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Activity - MemoryCare{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1>Create Activity</h1>
+    </div>
+    <div class="card" style="padding:1rem;">
+        <form method="post">{% csrf_token %}
+            {{ form.as_p }}
+            <button class="btn btn-primary" type="submit">Save</button>
+            <a class="btn" href="{% url 'dashboard:daily_activities' %}">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

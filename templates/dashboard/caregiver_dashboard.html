@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Caregiver Dashboard - MemoryCare{% endblock %}
+
+{% block content %}
+<div class="dashboard-header mb-4">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1 class="font-bold text-xl">Caregiver Dashboard</h1>
+            <p class="text-muted">Monitor your patients and manage their care</p>
+        </div>
+        <div>
+            <span class="badge" style="background: #e0f2fe; color: #0284c7; padding: 10px 20px; border-radius: 20px;">
+                <i class="fas fa-user-nurse"></i> {{ user.first_name }}
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- 4 Stats Cards Row -->
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 32px;">
+    <!-- Total Patients -->
+    <div class="card" style="display: flex; flex-direction: column; justify-content: center; padding: 24px;">
+        <div class="feature-icon-box"
+            style="background: #E0F2FE; color: #0284C7; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+            <i class="fas fa-user-friends"></i>
+        </div>
+        <p class="text-muted text-sm" style="margin-bottom: 4px;">Total Patients</p>
+        <h2 style="font-size: 2.5rem; font-weight: bold; margin: 0; line-height: 1;">{{ total_patients|default:"0" }}
+        </h2>
+        <p class="text-muted text-xs mt-2">Under your care</p>
+    </div>
+
+    <!-- Active Alerts -->
+    <div class="card" style="padding: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div class="feature-icon-box"
+                style="background: #FFFBEB; color: #D97706; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+                <i class="fas fa-bell"></i>
+            </div>
+            {% if active_alerts > 0 %}
+            <span style="color: #166534; font-size: 12px; font-weight: 600;"><i class="fas fa-arrow-up"></i> +
+                active_alerts </span>
+            {% endif %}
+        </div>
+        <p class="text-muted text-sm" style="margin-bottom: 4px;">Active Alerts</p>
+        <h2 style="font-size: 2.5rem; font-weight: bold; margin: 0; line-height: 1;">{{ active_alerts|default:"0" }}
+        </h2>
+        <p class="text-muted text-xs mt-2">Require attention</p>
+    </div>
+
+    <!-- Average Health -->
+    <div class="card" style="padding: 24px;">
+        <div class="feature-icon-box"
+            style="background: #DCFCE7; color: #166534; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+            <i class="fas fa-heartbeat"></i>
+        </div>
+        <p class="text-muted text-sm" style="margin-bottom: 4px;">Average Health</p>
+        <h2 style="font-size: 2.5rem; font-weight: bold; margin: 0; line-height: 1;">62%</h2>
+        <p class="text-muted text-xs mt-2">Across all patients</p>
+    </div>
+
+    <!-- Response Time -->
+    <div class="card" style="padding: 24px;">
+        <div class="feature-icon-box"
+            style="background: #DBEAFE; color: #2563EB; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+            <i class="fas fa-clock"></i>
+        </div>
+        <p class="text-muted text-sm" style="margin-bottom: 4px;">Response Time</p>
+        <h2 style="font-size: 2.5rem; font-weight: bold; margin: 0; line-height: 1;">15 <span
+                style="font-size: 1rem; color: var(--text-light); font-weight: normal;">min</span></h2>
+        <p class="text-muted text-xs mt-2">Average today</p>
+    </div>
+</div>
+
+<!-- Main Content: Recent Alerts (Left) + Your Patients (Right) -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-bottom: 32px;">
+
+    <!-- Recent Alerts Column -->
+    <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 class="font-bold text-lg"><i class="fas fa-bell" style="color: #F59E0B; margin-right: 8px;"></i> Recent
+                Alerts</h3>
+            <a href="#" class="text-sm text-muted"> </a>
+        </div>
+
+        {% if alerts %}
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            {% for alert in alerts|slice:":3" %}
+            <div class="card"
+                style="border-left: 4px solid {% if alert.level == 'critical' %}#EF4444{% elif alert.level == 'warning' %}#F59E0B{% else %}#3B82F6{% endif %}; background: {% if alert.level == 'critical' %}#FEF2F2{% elif alert.level == 'warning' %}#FFFBEB{% else %}#EFF6FF{% endif %}; padding: 20px;">
+                <div style="display: flex; gap: 16px; align-items: flex-start;">
+                    <div
+                        style="font-size: 24px; color: {% if alert.level == 'critical' %}#EF4444{% elif alert.level == 'warning' %}#F59E0B{% else %}#3B82F6{% endif %};">
+                        <i
+                            class="fas {% if alert.type == 'medication' %}fa-pills{% elif alert.type == 'activity' %}fa-calendar-times{% elif alert.type == 'mood' %}fa-tired{% elif alert.type == 'cognitive' %}fa-brain{% else %}fa-bell{% endif %}"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <h4 class="font-bold" style="font-size: 15px; color: var(--text-dark);">
+                                alert {{ alert.patient.last_name }}</h4>
+                            <span class="text-xs text-muted">{{ alert.time|timesince }} ago</span>
+                        </div>
+                        <p style="font-weight: 600; color: var(--text-dark); margin-bottom: 4px;">{{ alert.title }}</p>
+                        <p class="text-sm text-muted">{{ alert.message }}</p>
+
+                        <div style="margin-top: 12px; display: flex; justify-content: flex-end;">
+                            <a href="{% url 'dashboard:caregiver_patient_detail' alert.patient.id %}"
+                                style="font-size: 13px; color: var(--text-dark); font-weight: 500;">View Details
+                                <i class="fas fa-chevron-right text-xs"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="card" style="text-align: center; padding: 40px; color: gray;">
+            <i class="fas fa-check-circle" style="font-size: 2em; margin-bottom: 10px; color: #10B981;"></i>
+            <p>All clear! No active alerts.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Your Patients Column -->
+    <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 class="font-bold text-lg"><i class="fas fa-user-friends"
+                    style="color: var(--text-dark); margin-right: 8px;"></i> Your Patients</h3>
+            <a href="#" class="text-sm text-muted">></a>
+        </div>
+
+        {% if patients %}
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            {% for p in patients %}
+            <a href="{% url 'dashboard:caregiver_patient_detail' p.id %}" class="card"
+                style="display: flex; justify-content: space-between; align-items: center; text-decoration: none; padding: 24px; transition: transform 0.2s;"
+                onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                <div style="display: flex; gap: 16px; align-items: center;">
+                    <div
+                        style="width: 50px; height: 50px; background: #F3F4F6; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--text-light);">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold" style="font-size: 16px; margin-bottom: 4px; color: var(--text-dark);">{{
+                            p.first_name }} {{ p.last_name }}</h4>
+                        <!-- Only show real registered info like age/gender if desired used, but checking 'NAMES only' request -->
+                        <!-- User said 'show patient NAMES only inside Your Patients section' -->
+                        <!-- But also 'List ONLY patients assigned'. I think Name + maybe slight detail is okay, but I will remove the dummy status pills. -->
+                    </div>
+                </div>
+
+                <div style="color: var(--text-light); font-size: 18px;">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="card" style="text-align: center; padding: 40px; color: gray;">
+            <i class="fas fa-user-slash" style="font-size: 2em; margin-bottom: 10px;"></i>
+            <p>No patients assigned yet.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+</div>
+
+{# Cognitive Scores Section #}
+<div class="card p-6 mb-8" style="margin-bottom: 30px;">
+    <h3 class="font-bold text-lg mb-4"><i class="fas fa-brain" style="color: var(--text-dark); margin-right: 8px;"></i>
+        Recent Cognitive Scores</h3>
+
+    {% if recent_results %}
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="border-bottom: 2px solid #f3f4f6;">
+                    <th style="text-align: left; padding: 12px; color: var(--text-muted); font-weight: 600;">Patient
+                    </th>
+                    <th style="text-align: left; padding: 12px; color: var(--text-muted); font-weight: 600;">Test</th>
+                    <th style="text-align: left; padding: 12px; color: var(--text-muted); font-weight: 600;">Score</th>
+                    <th style="text-align: left; padding: 12px; color: var(--text-muted); font-weight: 600;">Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in recent_results %}
+                <tr style="border-bottom: 1px solid #f3f4f6;">
+                    <td style="padding: 12px; font-weight: 600;">{{ result.user.first_name }} {{ result.user.last_name
+                        }}</td>
+                    <td style="padding: 12px;">{{ result.test.name }}</td>
+                    <td style="padding: 12px;">
+                        <span
+                            style="background: {% if result.score == result.max_score %}#dcfce7{% else %}#f3f4f6{% endif %}; color: {% if result.score == result.max_score %}#166534{% else %}#374151{% endif %}; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 0.9em;">
+                            {{ result.score }}/{{ result.max_score }}
+                        </span>
+                    </td>
+                    <td style="padding: 12px; color: var(--text-muted);">{{ result.created_at|date:"M d, H:i" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-muted">No recent test activity from your patients.</p>
+    {% endif %}
+</div>
+
+{% endblock %}

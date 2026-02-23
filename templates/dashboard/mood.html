@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block title %}Mood Tracking - MemoryCare{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header"><h1>Mood Tracking</h1></div>
+    <div class="card" style="padding:1.25rem;">
+        <!-- Hidden CSRF token so JS can read it for AJAX posts -->
+        <form style="display:none;">
+            {% csrf_token %}
+        </form>
+        <p style="color:#7f8c8d; margin-bottom:1rem;">How are you feeling right now?</p>
+        <div class="mood-buttons" style="margin-bottom:1rem;">
+            <button class="mood-button" data-value="very_happy" title="Very happy">😊
+                <div style="font-size:0.9rem; margin-top:0.25rem; color:#7f8c8d;">Happy</div>
+            </button>
+            <button class="mood-button" data-value="happy" title="Happy">🙂
+                <div style="font-size:0.9rem; margin-top:0.25rem; color:#7f8c8d;">Good</div>
+            </button>
+            <button class="mood-button" data-value="neutral" title="Neutral">😐
+                <div style="font-size:0.9rem; margin-top:0.25rem; color:#7f8c8d;">Okay</div>
+            </button>
+            <button class="mood-button" data-value="sad" title="Sad">☹️
+                <div style="font-size:0.9rem; margin-top:0.25rem; color:#7f8c8d;">Sad</div>
+            </button>
+            <button class="mood-button" data-value="anxious" title="Anxious">😰
+                <div style="font-size:0.9rem; margin-top:0.25rem; color:#7f8c8d;">Anxious</div>
+            </button>
+        </div>
+
+        <div class="card" style="padding:1rem;">
+            <h4>Your Mood This Week</h4>
+            <div class="chart-container">
+                <canvas id="mood-week-chart"></canvas>
+            </div>
+        </div>
+
+        <hr style="margin-top:1rem; margin-bottom:1rem;">
+        <h3>Recent Entries</h3>
+        {% if entries %}
+            <ul>
+                {% for e in entries %}
+                    <li>{{ e.created_at|date:'M j, Y H:i' }} — <strong>{{ e.get_mood_display }}</strong>{% if e.note %} — {{ e.note }}{% endif %}</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No entries yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+(function(){
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+    const moodButtons = document.querySelectorAll('.mood-button');
+    moodButtons.forEach(btn=>{
+        btn.addEventListener('click', function(){
+            const value = this.dataset.value;
+            const fd = new FormData(); fd.append('mood', value);
+            fetch('{% url 'dashboard:mood_ajax' %}', {method:'POST', headers:{'X-CSRFToken': csrftoken}, body: fd})
+            .then(r=>r.json()).then(res=>{ if(res.ok){ fetchChart(); btn.innerHTML = '✓<div style="font-size:0.9rem; margin-top:0.25rem; color:#7f8c8d;">' + (value==='very_happy' ? 'Happy' : value==='happy' ? 'Good' : value==='neutral' ? 'Okay' : value==='sad' ? 'Sad' : 'Anxious') + '</div>'; setTimeout(()=>{ btn.innerHTML = (value==='very_happy' ? '😊' : value==='happy' ? '🙂' : value==='neutral' ? '😐' : value==='sad' ? '☹️' : '😰') + '<div style="font-size:0.9rem; margin-top:0.25rem; color:#7f8c8d;">' + (value==='very_happy' ? 'Happy' : value==='happy' ? 'Good' : value==='neutral' ? 'Okay' : value==='sad' ? 'Sad' : 'Anxious') + '</div>'; },800); } });
+        });
+    });
+
+    let chart = null;
+    function fetchChart(){
+        fetch('{% url 'dashboard:patient_dashboard_data_ajax' %}').then(r=>r.json()).then(data=>{
+            if(!data.ok) return;
+            const labels = data.mood.labels.map(d => new Date(d).toLocaleDateString([], {weekday: 'short'}));
+            const dataset = data.mood.data.map(v => v === null ? null : v);
+            const ctx = document.getElementById('mood-week-chart').getContext('2d');
+            if(chart) { chart.data.labels = labels; chart.data.datasets[0].data = dataset; chart.update(); return; }
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: { labels: labels, datasets:[{ label: 'Mood (1-5)', data: dataset, borderColor: '#3498db', backgroundColor: 'rgba(52,152,219,0.1)', tension:0.2 }] },
+                options: { scales: { y: { beginAtZero: true, min: 1, max: 5, ticks: { callback: function(val){ const map = {1:'😢',2:'😟',3:'😐',4:'🙂',5:'😄'}; return map[val] || val; } } } } }
+            });
+        });
+    }
+    fetchChart();
+})();
+</script>
+
+{% endblock %}

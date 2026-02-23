@@ -1,0 +1,252 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MemoryCare | Home</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: #f9fbfd;
+            color: #1f2937;
+        }
+
+        /* ---------- NAVBAR ---------- */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 60px;
+            background: #ffffff;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 22px;
+            font-weight: 700;
+            color: #2563eb;
+        }
+
+        nav a {
+            margin-left: 30px;
+            text-decoration: none;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        nav a.btn {
+            padding: 8px 18px;
+            border: 1px solid #2563eb;
+            border-radius: 20px;
+            color: #2563eb;
+        }
+
+        /* ---------- HERO ---------- */
+        .hero {
+            text-align: center;
+            padding: 90px 20px 40px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 16px;
+            background: #e0edff;
+            color: #2563eb;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .hero h1 {
+            font-size: 46px;
+            margin-bottom: 20px;
+        }
+
+        .hero h1 span {
+            color: #2563eb;
+        }
+
+        .hero p {
+            max-width: 720px;
+            margin: auto;
+            color: #6b7280;
+            font-size: 18px;
+        }
+
+        /* ---------- ROLES ---------- */
+        .roles {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            padding: 60px 40px;
+            flex-wrap: wrap;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 35px 30px;
+            width: 320px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+
+        .card .icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 14px;
+            margin: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+
+        .patient { background: #e0edff; color: #2563eb; }
+        .caregiver { background: #e6f7ef; color: #059669; }
+        .admin { background: #f1eafe; color: #7c3aed; }
+
+        .card h3 {
+            margin-bottom: 10px;
+        }
+
+        .card p {
+            color: #6b7280;
+            font-size: 15px;
+            margin-bottom: 25px;
+        }
+
+        .card a {
+            display: inline-block;
+            padding: 10px 24px;
+            border-radius: 25px;
+            text-decoration: none;
+            color: #2563eb;
+            background: #eef2ff;
+            font-weight: 600;
+        }
+
+        /* ---------- FEATURES ---------- */
+        .features {
+            display: flex;
+            justify-content: center;
+            gap: 80px;
+            padding: 80px 40px;
+            background: #ffffff;
+            text-align: center;
+            flex-wrap: wrap;
+        }
+
+        .feature {
+            max-width: 260px;
+        }
+
+        .feature .ficon {
+            font-size: 36px;
+            margin-bottom: 15px;
+        }
+
+        .feature h4 {
+            margin-bottom: 10px;
+        }
+
+        .feature p {
+            color: #6b7280;
+            font-size: 15px;
+        }
+
+        /* ---------- FOOTER ---------- */
+        footer {
+            text-align: center;
+            padding: 30px;
+            font-size: 14px;
+            color: #6b7280;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <div class="logo">
+        🧠 MemoryCare
+    </div>
+    <nav>
+        <a href="#">Help & Support</a>
+        <a href="{% url 'accounts:login' %}" class="btn">Sign in</a>
+    </nav>
+</header>
+
+<section class="hero">
+    <div class="badge">AI-Powered Care Support</div>
+    <h1>Compassionate Care for <span>Alzheimer's Patients</span></h1>
+    <p>
+        MemoryCare provides personalized support, cognitive tracking,
+        and seamless communication between patients, caregivers, and healthcare administrators.
+    </p>
+</section>
+
+<section class="roles">
+    <div class="card">
+        <div class="icon patient">👤</div>
+        <h3>Patient</h3>
+        <p>Access your health dashboard, cognitive tests, and daily activities.</p>
+        <a href="{% url 'accounts:login' %}">Continue →</a>
+    </div>
+
+    <div class="card">
+        <div class="icon caregiver">💚</div>
+        <h3>Caregiver</h3>
+        <p>Monitor patients, view alerts, and manage care routines.</p>
+        <a href="{% url 'accounts:login' %}">Continue →</a>
+    </div>
+
+    <div class="card">
+        <div class="icon admin">🛡️</div>
+        <h3>Docter</h3>
+        <p>Manage users, assign caregivers, and oversee the system.</p>
+        <a href="{% url 'accounts:login' %}">Continue →</a>
+    </div>
+</section>
+
+<section class="features">
+    <div class="feature">
+        <div class="ficon">🧠</div>
+        <h4>Cognitive Tracking</h4>
+        <p>Monitor cognitive health with simple, engaging tests.</p>
+    </div>
+
+    <div class="feature">
+        <div class="ficon">💊</div>
+        <h4>Medication Reminders</h4>
+        <p>Never miss a dose with gentle, timely reminders.</p>
+    </div>
+
+    <div class="feature">
+        <div class="ficon">👨‍👩‍👧</div>
+        <h4>Family Connection</h4>
+        <p>Keep loved ones informed with real-time updates.</p>
+    </div>
+</section>
+
+<footer>
+    © 2026 MemoryCare. Designed with care for patients and families.
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Admin Dashboard - MemoryCare{% endblock %}
+
+{% block content %}
+<div class="dashboard-header mb-4">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1 class="font-bold text-xl">Admin Dashboard</h1>
+            <p class="text-muted">System management and patient assignment</p>
+        </div>
+        <div>
+            <span class="badge" style="background: #e0f2fe; color: #0284c7; padding: 10px 20px; border-radius: 20px;">
+                <i class="fas fa-user-md"></i> {{ user.first_name }} (Admin)
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Row -->
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px;">
+    <div class="card">
+        <h3 style="color: var(--text-light); font-size: 1rem;">Total Patients</h3>
+        <div style="font-size: 2.5rem; font-weight: bold; color: var(--primary-color);">{{ patients.count }}</div>
+    </div>
+    <div class="card">
+        <h3 style="color: var(--text-light); font-size: 1rem;">Total Caregivers</h3>
+        <div style="font-size: 2.5rem; font-weight: bold; color: var(--secondary-color);">{{ caregivers.count }}</div>
+    </div>
+    <div class="card">
+        <h3 style="color: var(--text-light); font-size: 1rem;">System Status</h3>
+        <div style="font-size: 2.5rem; font-weight: bold; color: #10B981;">Online</div>
+    </div>
+</div>
+
+<!-- Patient Management -->
+<div class="card">
+    <div class="card-header" style="margin-bottom: 20px;">
+        <h3>Patient Management</h3>
+    </div>
+
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="text-align: left; border-bottom: 2px solid var(--border-color);">
+                <th style="padding: 10px;">Patient</th>
+                <th style="padding: 10px;">Status</th>
+                <th style="padding: 10px;">Assigned Caregiver</th>
+                <th style="padding: 10px;">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for patient in patients %}
+            <tr style="border-bottom: 1px solid var(--border-color);">
+                <td style="padding: 15px 10px;">
+                    <div style="font-weight: 600;">{{ patient.first_name }} {{ patient.last_name }}</div>
+                    <small class="text-muted">{{ patient.email }}</small>
+                </td>
+                <td style="padding: 15px 10px;">
+                    {% if patient.assigned_caregiver %}
+                    <span
+                        style="background: #DCFCE7; color: #166534; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">Assigned</span>
+                    {% else %}
+                    <span
+                        style="background: #FEF3C7; color: #D97706; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">Unassigned</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 15px 10px;">
+                    {% if patient.assigned_caregiver %}
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-user-nurse" style="color: var(--primary-color);"></i>
+                        {{ patient.assigned_caregiver.first_name }} {{ patient.assigned_caregiver.last_name }}
+                    </div>
+                    {% else %}
+                    <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 15px 10px;">
+                    <form action="{% url 'dashboard:assign_caregiver' %}" method="POST"
+                        style="display: flex; gap: 8px; align-items: center; margin: 0;">
+                        {% csrf_token %}
+                        <input type="hidden" name="patient_id" value="{{ patient.id }}">
+
+                        <select name="caregiver_id"
+                            style="padding: 6px; border-radius: 4px; border: 1px solid var(--border-color); width: 150px; margin-bottom: 0;">
+                            <option value="">-- No Caregiver --</option>
+                            {% for c in caregivers %}
+                            <option value="{{ c.id }}">
+                                {{ c.first_name }} {{ c.last_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn" style="padding: 6px 12px; font-size: 12px;">Update</button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" style="text-align: center; padding: 30px; color: gray;">
+                    No patients found.
+                    <a href="{% url 'accounts:register_patient' %}" style="color: var(--primary-color);">Add a
+                        patient</a>?
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div
+        style="padding: 20px; background: #f9fafb; border-top: 1px solid var(--border-color); display: flex; gap: 15px;">
+        <a href="{% url 'accounts:register_patient' %}" class="btn">
+            <i class="fas fa-plus-circle"></i> Add New Patient
+        </a>
+        <a href="{% url 'accounts:register_caregiver' %}" class="btn" style="background: var(--secondary-color);">
+            <i class="fas fa-plus-circle"></i> Add New Caregiver
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Patient Dashboard - MemoryCare{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h1 class="text-xl font-bold">Good Morning, {{ request.user.first_name }}! 👋</h1>
+    <p class="text-muted">Here's your wellness overview for today</p>
+</div>
+
+<!-- Feature Cards Grid (4 Columns) -->
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 32px;">
+
+
+    <!-- Daily Activities -->
+    <a href="{% url 'dashboard:daily_activities' %}" class="card"
+        style="border: 1px solid #D1FAE5; background: #ECFDF5;">
+        <div class="feature-icon-box" style="background: white; color: var(--secondary-color);">
+            <i class="fas fa-calendar-alt"></i>
+        </div>
+        <h3 class="font-bold text-lg mb-4">Daily Activities</h3>
+        <p class="text-sm text-muted">3 tasks remaining</p>
+    </a>
+
+    <!-- Track Mood -->
+    <a href="{% url 'dashboard:mood' %}" class="card" style="border: 1px solid #E9D5FF; background: #F3E8FF;">
+        <div class="feature-icon-box" style="background: white; color: #9333EA;">
+            <i class="fas fa-smile"></i>
+        </div>
+        <h3 class="font-bold text-lg mb-4">Track Mood</h3>
+        <p class="text-sm text-muted">How are you feeling?</p>
+    </a>
+
+    <!-- Health Score Link -->
+    <div class="card" style="border: 1px solid #F3F4F6; background: white;">
+        <div class="feature-icon-box" style="background: #F3F4F6; color: var(--text-dark);">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <h3 class="font-bold text-lg mb-4">Health Score</h3>
+        <p class="text-sm text-muted">View insights</p>
+    </div>
+</div>
+
+<!-- Main Section Grid (2 Columns: Health Score + Schedule) -->
+<div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 24px; margin-bottom: 32px;">
+
+    <!-- Health Score Display -->
+    <div class="card"
+        style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+        <div
+            style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 class="font-bold">Health Score</h3>
+            <span style="color: var(--secondary-color); font-size: 14px;"><i class="fas fa-arrow-up"></i> Up</span>
+        </div>
+
+        <div style="position: relative; width: 160px; height: 160px; margin-bottom: 20px;">
+            <svg viewBox="0 0 36 36" style="width: 100%; height: 100%; transform: rotate(-90deg);">
+                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none"
+                    stroke="#E5E7EB" stroke-width="3" />
+                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none"
+                    stroke="#65A30D" stroke-width="3" stroke-dasharray="{{ health_score|default:78 }}, 100" />
+            </svg>
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                <span style="font-size: 32px; font-weight: 800; color: #65A30D;">{{ health_score|default:78 }}</span>
+                <div style="font-size: 12px; color: var(--text-light);">/ 100</div>
+            </div>
+        </div>
+        <div
+            style="padding: 8px 16px; background: #ECFDF5; color: #166534; border-radius: 20px; font-weight: 600; font-size: 14px;">
+            Good
+        </div>
+    </div>
+
+    <!-- Today's Schedule -->
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h3 class="font-bold"><i class="fas fa-clipboard-list" style="color: #F59E0B; margin-right: 8px;"></i>
+                Today's Schedule</h3>
+            <a href="{% url 'dashboard:daily_activities' %}" class="text-sm text-muted">View All ></a>
+        </div>
+
+        <div class="schedule-list">
+            {% for item in schedule|slice:":4" %}
+            <div
+                style="display: flex; align-items: center; padding: 16px; background: {% if item.completed %}#F0FDF4{% else %}white{% endif %}; border: 1px solid {% if item.completed %}#DCFCE7{% else %}var(--border-color){% endif %}; border-radius: 12px; margin-bottom: 12px;">
+                <div
+                    style="width: 48px; height: 48px; background: {% if item.type == 'reminder' %}#FEF3C7{% elif item.completed %}#DCFCE7{% else %}#DBEAFE{% endif %}; color: {% if item.type == 'reminder' %}#D97706{% elif item.completed %}#166534{% else %}var(--primary-color){% endif %}; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-right: 16px;">
+                    <i
+                        class="fas {% if item.type == 'reminder' %}fa-bell{% elif 'medication' in item.title|lower %}fa-pills{% elif 'meal' in item.title|lower %}fa-utensils{% elif 'exercise' in item.title|lower %}fa-walking{% else %}fa-calendar-check{% endif %}"></i>
+                </div>
+                <div style="flex: 1;">
+                    <div
+                        style="font-size: 12px; color: var(--text-light); font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">
+                        {{ item.type|title }}</div>
+                    <div style="font-weight: 700; color: var(--text-dark);">{{ item.title }}</div>
+
+                </div>
+                <div
+                    style="width: 32px; height: 32px; background: {% if item.completed %}#bbf7d0{% else %}#f3f4f6{% endif %}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: {% if item.completed %}#166534{% else %}var(--text-light){% endif %};">
+                    <i class="fas {% if item.completed %}fa-check{% else %}fa-minus{% endif %}"></i>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-muted text-center py-4">No scheduled events for today.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Mood Section -->
+<div class="card" style="display: flex; align-items: center; justify-content: space-between; padding: 40px;">
+    <div>
+        <h3 class="font-bold text-lg mb-2"><i class="far fa-comment-dots"></i> How are you feeling right now?</h3>
+    </div>
+    <div style="display: flex; gap: 20px;">
+        <button onclick="recordMood('happy')"
+            style="display: flex; flex-direction: column; align-items: center; gap: 8px; background: #FEF3C7; border: 1px solid #FDE68A; padding: 16px; border-radius: 16px; min-width: 100px; cursor: pointer;">
+            <span style="font-size: 32px;">😊</span>
+            <span style="font-weight: 600; color: #D97706;">Happy</span>
+        </button>
+        <button onclick="recordMood('good')"
+            style="display: flex; flex-direction: column; align-items: center; gap: 8px; background: #D1FAE5; border: 1px solid #A7F3D0; padding: 16px; border-radius: 16px; min-width: 100px; cursor: pointer;">
+            <span style="font-size: 32px;">🙂</span>
+            <span style="font-weight: 600; color: #059669;">Good</span>
+        </button>
+        <button onclick="recordMood('okay')"
+            style="display: flex; flex-direction: column; align-items: center; gap: 8px; background: #F3F4F6; border: 1px solid #E5E7EB; padding: 16px; border-radius: 16px; min-width: 100px; cursor: pointer;">
+            <span style="font-size: 32px;">😐</span>
+            <span style="font-weight: 600; color: #6B7280;">Okay</span>
+        </button>
+        <button onclick="recordMood('sad')"
+            style="display: flex; flex-direction: column; align-items: center; gap: 8px; background: #DBEAFE; border: 1px solid #BFDBFE; padding: 16px; border-radius: 16px; min-width: 100px; cursor: pointer;">
+            <span style="font-size: 32px;">😢</span>
+            <span style="font-weight: 600; color: #2563EB;">Sad</span>
+        </button>
+        <button onclick="recordMood('anxious')"
+            style="display: flex; flex-direction: column; align-items: center; gap: 8px; background: #F3E8FF; border: 1px solid #E9D5FF; padding: 16px; border-radius: 16px; min-width: 100px; cursor: pointer;">
+            <span style="font-size: 32px;">😰</span>
+            <span style="font-weight: 600; color: #9333EA;">Anxious</span>
+        </button>
+    </div>
+</div>
+
+<!-- Modals -->
+
+
+<script>
+    function openModal(id) {
+        document.getElementById(id).style.display = "flex";
+    }
+    function closeModal(id) {
+        document.getElementById(id).style.display = "none";
+        // Reset test modal content on close
+        if (id === 'test-modal') {
+            location.reload(); // Simple reset
+        }
+    }
+
+    function recordMood(mood) {
+        // Simple AJAX post for mood
+        const formData = new FormData();
+        formData.append('mood', mood);
+        fetch("{% url 'dashboard:mood_ajax' %}", {
+            method: 'POST',
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+            body: formData
+        }).then(res => res.json()).then(data => {
+            if (data.ok) {
+                alert("Mood recorded: " + data.mood_display);
+            }
+        });
+    }
+
+
+</script>
+{% endblock %}

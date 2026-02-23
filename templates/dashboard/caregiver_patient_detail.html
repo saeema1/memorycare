@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Patient Details - {{ patient.first_name }} - MemoryCare{% endblock %}
+
+{% block content %}
+<div class="dashboard-header mb-20">
+    <div style="display: flex; align-items: center; gap: 20px;">
+        <a href="{% url 'dashboard:caregiver_dashboard' %}" class="btn"
+            style="background: transparent; color: var(--text-dark); border: 1px solid var(--border-color); padding: 5px 10px;">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+        <div>
+            <h1>{{ patient.first_name }} {{ patient.last_name }}</h1>
+            <p style="color: var(--text-light);">Patient Overview</p>
+        </div>
+    </div>
+</div>
+
+<!-- Vitals / Info -->
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+    <h3><i class="fas fa-info-circle"></i> Personal Info</h3>
+    <div style="margin-top: 15px; display: grid; gap: 15px;">
+        <div style="padding-bottom: 10px; border-bottom: 1px solid #f0f0f0;">
+            <strong>Full Name:</strong> {{ patient.first_name }} {{ patient.last_name }}
+        </div>
+        <div style="padding-bottom: 10px; border-bottom: 1px solid #f0f0f0;">
+            <strong>Gender:</strong> {{ patient.get_gender_display|default:"Not specified" }}
+        </div>
+        <div style="padding-bottom: 10px; border-bottom: 1px solid #f0f0f0;">
+            <strong>Age:</strong> {{ patient.get_age|default:"--" }} years
+        </div>
+        <div style="padding-bottom: 10px; border-bottom: 1px solid #f0f0f0;">
+            <strong>Phone Number:</strong> {{ patient.phone_number|default:"Not listed" }}
+        </div>
+        <div>
+            <strong>Address:</strong> {{ patient.address|default:"Not listed" }}
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Patient Condition -->
+<div class="card" style="max-width: 600px; margin: 20px auto;">
+    <h3><i class="fas fa-heartbeat"></i> Patient Condition</h3>
+    <div style="margin-top: 15px; display: grid; gap: 15px;">
+        <div style="padding-bottom: 10px; border-bottom: 1px solid #f0f0f0;">
+            <strong>Condition Summary:</strong>
+            style="font-weight: 600; color: {% if condition_label == 'Stable' %}#059669{% elif condition_label ==
+            'Monitoring' %}#2563EB{% else %}#DC2626{% endif %};">
+            {{ condition_label }}</span>
+        </div>
+        <div>
+            <strong>Health Score:</strong>
+            <div style="margin-top: 8px; background: #E5E7EB; border-radius: 10px; height: 10px; overflow: hidden;">
+                <div
+                    style="background: {% if health_score >= 80 %}#10B981{% elif health_score >= 50 %}#F59E0B{% else %}#EF4444{% endif %}; width: {{ health_score }}%; height: 100%;">
+                </div>
+            </div>
+            <div style="margin-top: 4px; font-size: 0.9em; color: var(--text-light); text-align: right;">
+                {{ health_score }}/100
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

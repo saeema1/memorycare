@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Color Test - MemoryCare{% endblock %}
+
+{% block content %}
+<div class="dashboard-header mb-8">
+    <div style="display: flex; align-items: center; gap: 16px;">
+        <a href="{% url 'dashboard:cognitive_tests' %}" class="btn btn-outline"><i class="fas fa-arrow-left"></i>
+            Back</a>
+        <h1 class="text-2xl font-bold">Color Recognition</h1>
+    </div>
+</div>
+
+<div class="card p-6" style="max-width: 500px; margin: 0 auto;">
+    <div id="game-setup" class="text-center">
+        <p class="mb-6 text-lg">Click the button that matches the <strong>Text Meaning</strong>, not the ink color.</p>
+        <button onclick="startGame()" class="btn btn-primary">Start</button>
+    </div>
+
+    <div id="game-area" class="hidden text-center" style="display: none;">
+        <div class="mb-8">
+            <h2 id="color-word" class="text-4xl font-bold" style="font-size: 3rem;">RED</h2>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <button onclick="checkAnswer('red')" class="btn" style="background: #ef4444; color: white;">Red</button>
+            <button onclick="checkAnswer('blue')" class="btn" style="background: #3b82f6; color: white;">Blue</button>
+            <button onclick="checkAnswer('green')" class="btn" style="background: #22c55e; color: white;">Green</button>
+            <button onclick="checkAnswer('yellow')" class="btn"
+                style="background: #eab308; color: black;">Yellow</button>
+        </div>
+        <div class="mt-4 text-muted">Score: <span id="score-display">0</span>/5</div>
+    </div>
+
+    <div id="game-over" class="text-center hidden" style="display: none;">
+        <h2 class="text-xl font-bold mb-4">Round Complete</h2>
+        <p>Your Score: <span id="final-score">0</span>/5</p>
+        <button onclick="location.reload()" class="btn btn-primary mt-4">Try Again</button>
+    </div>
+</div>
+
+<script>
+    const colors = ['red', 'blue', 'green', 'yellow'];
+    let score = 0;
+    let rounds = 0;
+    const totalRounds = 5;
+    let correctColor = '';
+
+    function startGame() {
+        document.getElementById('game-setup').style.display = 'none';
+        const gameArea = document.getElementById('game-area');
+        gameArea.style.display = 'block';
+        gameArea.classList.remove('hidden');
+        score = 0;
+        rounds = 0;
+        nextRound();
+    }
+
+    function nextRound() {
+        if (rounds >= totalRounds) {
+            endGame();
+            return;
+        }
+
+        rounds++;
+
+        // Pick a word (what users should click)
+        correctColor = colors[Math.floor(Math.random() * colors.length)];
+        // Pick an ink color (distraction)
+        let inkColor = colors[Math.floor(Math.random() * colors.length)];
+        while (inkColor === correctColor && Math.random() > 0.3) {
+            inkColor = colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        const wordEl = document.getElementById('color-word');
+        wordEl.innerText = correctColor.toUpperCase();
+
+        // Set style color
+        const map = { 'red': '#ef4444', 'blue': '#3b82f6', 'green': '#22c55e', 'yellow': '#eab308' };
+        wordEl.style.color = map[inkColor];
+    }
+
+    function checkAnswer(choice) {
+        if (choice === correctColor) {
+            score++;
+        }
+        document.getElementById('score-display').innerText = score;
+        nextRound();
+    }
+
+    function endGame() {
+        document.getElementById('game-area').style.display = 'none';
+        document.getElementById('game-over').style.display = 'block';
+        document.getElementById('final-score').innerText = score;
+
+        // Save
+        fetch('{% url "dashboard:save_test_result" %}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+            body: JSON.stringify({
+                test_name: 'Color Recognition Test',
+                score: score,
+                max_score: totalRounds
+            })
+        });
+    }
+</script>
+{% endblock %}

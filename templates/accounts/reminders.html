@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}Reminders - MemoryCare{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1>Your Reminders</h1>
+    </div>
+    <div class="card" style="padding:1.5rem;">
+        {% if reminders %}
+            <ul>
+                {% for r in reminders %}
+                    <li style="margin-bottom:1rem;">
+                        <strong>{{ r.title }}</strong> — {{ r.scheduled_for|date:"M j, Y H:i" }} {% if not r.read %}<span style="color:crimson">(unread)</span>{% endif %}
+                        <p style="color:#7f8c8d;">{{ r.message }}</p>
+                        {% if not r.read %}
+                            <a href="{% url 'accounts:reminder_mark_read' r.id %}" class="btn btn-small">Mark as read</a>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No reminders available.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}Toggle Activity - MemoryCare{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header"><h1>Confirm</h1></div>
+    <div class="card" style="padding:1rem;">
+        <p>Toggle completion for <strong>{{ activity.name }}</strong> scheduled at {{ activity.scheduled_for }}?</p>
+        <form method="post">{% csrf_token %}
+            <button class="btn btn-danger" type="submit">Toggle</button>
+            <a class="btn" href="{% url 'dashboard:daily_activities' %}">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

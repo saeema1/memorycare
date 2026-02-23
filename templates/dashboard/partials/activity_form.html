@@ -1,0 +1,34 @@
+{% csrf_token %}
+<div class="activity-form">
+  <div class="form-group">
+    {{ form.name.label_tag }}
+    {{ form.name }}
+    {% if form.name.errors %}<div class="message error">{{ form.name.errors }}</div>{% endif %}
+  </div>
+  <div class="form-group">
+    {{ form.activity_type.label_tag }}
+    {{ form.activity_type }}
+    {% if form.activity_type.errors %}<div class="message error">{{ form.activity_type.errors }}</div>{% endif %}
+  </div>
+  <div class="form-group">
+    {{ form.scheduled_for.label_tag }}
+    {{ form.scheduled_for }}
+    {% if form.scheduled_for.errors %}<div class="message error">{{ form.scheduled_for.errors }}</div>{% endif %}
+  </div>
+  <div class="form-group">
+    {{ form.recurrence.label_tag }}
+    {{ form.recurrence }}
+  </div>
+  <div class="form-group">
+    {{ form.recurrence_interval.label_tag }}
+    {{ form.recurrence_interval }}
+  </div>
+  <div class="form-group">
+    {{ form.recurrence_end.label_tag }}
+    {{ form.recurrence_end }}
+  </div>
+  <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:0.5rem;">
+    <button class="btn btn-success" id="activity-save">Save</button>
+    <button class="btn" id="activity-cancel">Cancel</button>
+  </div>
+</div>

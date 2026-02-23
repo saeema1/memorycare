@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Register - MemoryCare{% endblock %}
+
+{% block content %}
+<div class="card" style="text-align: center; max-width: 600px; margin: 40px auto;">
+    <div class="card-header">
+        <h1>Welcome to MemoryCare</h1>
+        <p>Please select your role to continue</p>
+    </div>
+
+    <div style="display: flex; gap: 20px; justify-content: center; margin: 40px 0;">
+
+
+        <a href="{% url 'accounts:register_caregiver' %}" class="btn"
+            style="padding: 20px 40px; display: block; width: 200px; text-decoration: none; background-color: var(--secondary-color);">
+            <div style="font-size: 3em; margin-bottom: 15px;"><i class="fas fa-user-nurse"></i></div>
+            <h3>Caregiver</h3>
+            <p style="font-size: 0.9em; opacity: 0.8;">I am caring for someone</p>
+        </a>
+    </div>
+
+    <div class="form-footer">
+        <p>Already have an account? <a href="{% url 'accounts:login' %}">Login here</a></p>
+    </div>
+</div>
+{% endblock %}

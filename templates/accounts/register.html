@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block title %}Register - MemoryCare{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1><i class="fas fa-user-plus"></i> Register</h1>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="id_username">Username</label>
+            {{ form.username }}
+            {% if form.username.errors %}
+            <div class="error-msg">{{ form.username.errors }}</div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="id_email">Email</label>
+            {{ form.email }}
+            {% if form.email.errors %}
+            <div class="error-msg">{{ form.email.errors }}</div>
+            {% endif %}
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="id_first_name">First Name</label>
+                {{ form.first_name }}
+                {% if form.first_name.errors %}
+                <div class="error-msg">{{ form.first_name.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="id_last_name">Last Name</label>
+                {{ form.last_name }}
+                {% if form.last_name.errors %}
+                <div class="error-msg">{{ form.last_name.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="id_password1">Password</label>
+            {{ form.password1 }}
+            {% if form.password1.errors %}
+            <div class="error-msg">{{ form.password1.errors }}</div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="id_password2">Confirm Password</label>
+            {{ form.password2 }}
+            {% if form.password2.errors %}
+            <div class="error-msg">{{ form.password2.errors }}</div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="id_phone_number">Phone Number</label>
+            {{ form.phone_number }}
+        </div>
+
+        <div class="form-group">
+            <label for="id_date_of_birth">Date of Birth</label>
+            {{ form.date_of_birth }}
+        </div>
+
+        <div class="form-group">
+            <label for="id_alzheimers_duration_years">Alzheimer's duration (years)</label>
+            {{ form.alzheimers_duration_years }}
+            {% if form.alzheimers_duration_years.errors %}
+            <div class="error-msg">{{ form.alzheimers_duration_years.errors }}</div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="id_address">Address</label>
+            {{ form.address }}
+        </div>
+
+        <button type="submit" class="btn btn-success">
+            <i class="fas fa-user-plus"></i> Register
+        </button>
+    </form>
+
+    <div class="form-footer">
+        <p>Already have an account? <a href="{% url 'accounts:login' %}">Login here</a></p>
+    </div>
+</div>
+{% endblock %}

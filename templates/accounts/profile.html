@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Your Profile - MemoryCare{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1>Your Profile</h1>
+    </div>
+    <div class="card" style="padding:1.5rem;">
+        <p><strong>Full Name:</strong> {{ user_profile.get_full_name|default:user_profile.username }}</p>
+        <p><strong>Email:</strong> {{ user_profile.email }}</p>
+        <p><strong>Phone:</strong> {{ user_profile.phone_number|default:"Not set" }}</p>
+        <p><strong>Address:</strong> {{ user_profile.address|default:"Not set" }}</p>
+        <p><strong>Emergency Contact:</strong> {{ user_profile.emergency_contact_name|default:"Not set" }} {% if user_profile.emergency_contact_phone %} - {{ user_profile.emergency_contact_phone }}{% endif %}</p>
+        <p><strong>Alzheimer's Duration:</strong> {% if user_profile.alzheimers_duration_years %}{{ user_profile.alzheimers_duration_years }} year{% if user_profile.alzheimers_duration_years and user_profile.alzheimers_duration_years > 1 %}s{% endif %}{% else %}Not provided{% endif %}</p>
+
+        <hr>
+        <h3>Assigned Staff</h3>
+        <p><strong>Doctor:</strong>
+            {% if user_profile.assigned_doctor %}
+                <a href="#">{{ user_profile.assigned_doctor.get_full_name|default:user_profile.assigned_doctor.username }}</a> - {{ user_profile.assigned_doctor.email }}
+            {% else %}
+                Not assigned
+            {% endif %}
+        </p>
+        <p><strong>Caregiver:</strong>
+            {% if user_profile.assigned_caregiver %}
+                <a href="#">{{ user_profile.assigned_caregiver.get_full_name|default:user_profile.assigned_caregiver.username }}</a> - {{ user_profile.assigned_caregiver.email }}
+            {% else %}
+                Not assigned
+            {% endif %}
+        </p>
+
+        <hr>
+        <h3>Reminders</h3>
+        {% if reminders %}
+            <ul>
+                {% for r in reminders %}
+                    <li>
+                        <strong>{{ r.title }}</strong> — {{ r.scheduled_for|date:"M j, Y H:i" }} {% if not r.read %}<span style="color:crimson">(unread)</span>{% endif %}<br>
+                        <small style="color:#7f8c8d">{{ r.message|truncatewords:25 }}</small>
+                        <div style="margin-top:0.3rem;"><a href="{% url 'accounts:reminder_mark_read' r.id %}">Mark as read</a></div>
+                    </li>
+                {% endfor %}
+            </ul>
+            <p><a href="{% url 'accounts:reminders' %}">View all reminders</a></p>
+        {% else %}
+            <p>No reminders yet.</p>
+        {% endif %}
+
+        <p style="margin-top:1rem;"><a href="{% url 'accounts:profile_edit' %}" class="btn">Edit profile</a></p>
+    </div>
+</div>
+{% endblock %}

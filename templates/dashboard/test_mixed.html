@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mixed Test - MemoryCare{% endblock %}
+
+{% block content %}
+<div class="dashboard-header mb-8">
+    <div style="display: flex; align-items: center; gap: 16px;">
+        <a href="{% url 'dashboard:cognitive_tests' %}" class="btn btn-outline"><i class="fas fa-arrow-left"></i>
+            Back</a>
+        <h1 class="text-2xl font-bold">Mixed Simple Test</h1>
+    </div>
+</div>
+
+<div class="card p-6" style="max-width: 600px; margin: 0 auto;">
+    <div id="game-intro" class="text-center">
+        <p class="mb-6">Answer a few simple questions to exercise your brain.</p>
+        <button onclick="startGame()" class="btn btn-primary">Start</button>
+    </div>
+
+    <div id="quiz-area" class="hidden" style="display: none;">
+        <div class="mb-4 text-right text-sm text-muted">Question <span id="q-num">1</span>/3</div>
+        <h2 id="question-text" class="text-xl font-bold mb-6 text-center">Question?</h2>
+
+        <div id="options" class="grid gap-3">
+            <!-- Buttons -->
+        </div>
+    </div>
+
+    <div id="result-area" class="hidden text-center" style="display: none;">
+        <h2 class="text-xl font-bold mb-4">Completed!</h2>
+        <p>You scored <span id="score">0</span>/3</p>
+        <button onclick="location.reload()" class="btn btn-secondary mt-4">Again</button>
+    </div>
+</div>
+
+<script>
+    const questions = [
+        {
+            q: "What is 15 + 7?",
+            options: ["20", "22", "23", "18"],
+            a: 1
+        },
+        {
+            q: "Which shape has 3 sides?",
+            options: ["Square", "Circle", "Triangle", "Rectangle"],
+            a: 2
+        },
+        {
+            q: "Which month comes after April?",
+            options: ["March", "May", "June", "July"],
+            a: 1
+        }
+    ];
+
+    let currentQ = 0;
+    let score = 0;
+
+    function startGame() {
+        document.getElementById('game-intro').style.display = 'none';
+        const quizArea = document.getElementById('quiz-area');
+        quizArea.style.display = 'block';
+        quizArea.classList.remove('hidden');
+        currentQ = 0;
+        score = 0;
+        showQuestion();
+    }
+
+    function showQuestion() {
+        if (currentQ >= questions.length) {
+            endGame();
+            return;
+        }
+
+        document.getElementById('q-num').innerText = currentQ + 1;
+        const qData = questions[currentQ];
+        document.getElementById('question-text').innerText = qData.q;
+
+        const optsDiv = document.getElementById('options');
+        optsDiv.innerHTML = '';
+
+        qData.options.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'btn text-left p-3 border rounded hover:bg-gray-50';
+            btn.style.textAlign = 'left';
+            btn.style.padding = '12px';
+            btn.style.width = '100%';
+            btn.style.marginBottom = '10px';
+            btn.innerText = opt;
+            btn.onclick = () => answer(idx);
+            optsDiv.appendChild(btn);
+        });
+    }
+
+    function answer(idx) {
+        if (idx === questions[currentQ].a) {
+            score++;
+        }
+        currentQ++;
+        showQuestion();
+    }
+
+    function endGame() {
+        document.getElementById('quiz-area').style.display = 'none';
+        document.getElementById('result-area').style.display = 'block';
+        document.getElementById('score').innerText = score;
+
+        fetch('{% url "dashboard:save_test_result" %}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+            body: JSON.stringify({
+                test_name: 'Mixed Simple Test',
+                score: score,
+                max_score: questions.length
+            })
+        });
+    }
+</script>
+{% endblock %}
