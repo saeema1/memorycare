@@ -2,13 +2,24 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 
 
 def home_redirect(request):
-    # If user is already authenticated, send them to dashboard home
+    # If user is already authenticated, send them to the appropriate dashboard
     if request.user.is_authenticated:
+        role = getattr(request.user, 'role', '')
+        if role and isinstance(role, str):
+            r = role.upper()
+            if r == 'DOCTOR':
+                return redirect('dashboard:doctor_dashboard')
+            if r == 'CAREGIVER':
+                return redirect('dashboard:caregiver_dashboard')
+            if r == 'PATIENT':
+                return redirect('dashboard:patient_dashboard')
+        # Fallback to dashboard home which will perform its own routing
         return redirect('dashboard:home')
+    # If not authenticated redirect to login so login view handles presentation
     return redirect('accounts:login')
 
 urlpatterns = [

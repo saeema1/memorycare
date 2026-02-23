@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -35,13 +36,32 @@ def user_login(request):
 
 def login_view(request):
     """Authenticate and redirect users based on their role."""
+    # If user is already authenticated, send them to their dashboard immediately
+    if request.user.is_authenticated:
+        role = getattr(request.user, 'role', '')
+        if isinstance(role, str):
+            r = role.upper()
+            if r == 'DOCTOR':
+                return redirect('dashboard:doctor_dashboard')
+            if r == 'CAREGIVER':
+                return redirect('dashboard:caregiver_dashboard')
+            if r == 'PATIENT':
+                return redirect('dashboard:patient_dashboard')
+        return redirect('dashboard:home')
     # Use the project's AuthenticationForm-compatible form so the template
     # renders fields and CSRF works correctly.
+    # Support optional `next` parameter (safe/relative URLs only), otherwise redirect by role
+    next_url = request.POST.get('next') or request.GET.get('next')
     if request.method == 'POST':
         form = UserLoginForm(request, data=request.POST)
         if form.is_valid():
             user = form.get_user()
             login(request, user)
+
+            # If a safe next URL was provided, honour it (allows redirect back to requested page)
+            if next_url and (next_url.startswith('/') or url_has_allowed_host_and_scheme(next_url, {request.get_host()})):
+                return redirect(next_url)
+
             role = getattr(user, 'role', '').upper()
             if role == 'DOCTOR':
                 return redirect('dashboard:doctor_dashboard')
@@ -52,7 +72,7 @@ def login_view(request):
     else:
         form = UserLoginForm(request)
 
-    return render(request, 'accounts/login.html', {'form': form})
+    return render(request, 'accounts/login.html', {'form': form, 'next': next_url})
 
 
 def logout_view(request):

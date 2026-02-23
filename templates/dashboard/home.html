@@ -3,10 +3,64 @@
 {% block title %}Dashboard - MemoryCare{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header">
-        <h1>Welcome to MemoryCare</h1>
+<!-- Public Landing Hero -->
+<section class="hero-banner">
+    <div class="hero-inner">
+        <div style="flex:1">
+            <div class="badge">AI-Powered Care Support</div>
+            <h1 class="hero-title">Compassionate Care for <span style="color: var(--primary-color)">Alzheimer's Patients</span></h1>
+            <p class="text-muted" style="max-width:720px; margin-top:12px;">MemoryCare provides personalized support, cognitive tracking, and seamless communication between patients, caregivers, and healthcare administrators.</p>
+        </div>
+        <div style="flex:1; text-align:center">
+            <img src="/static/img/hero-hand.jpg" alt="Hero" style="max-width:420px; width:100%; border-radius:12px; box-shadow: var(--shadow-sm);">
+        </div>
     </div>
-    <p>Redirecting to your dashboard...</p>
-</div>
+</section>
+
+<!-- Role selection cards -->
+<section style="max-width:1200px; margin: 36px auto; padding: 0 24px;">
+    <h2 style="text-align:center; margin-bottom: 20px; color: #6B7280;">Select your role to continue</h2>
+    <div class="roles" style="display:grid; grid-template-columns: repeat(3,1fr); gap:20px;">
+        <div class="role-card card">
+            <div class="role-icon"><i class="fa-solid fa-user" style="font-size:28px;color:var(--primary-color)"></i></div>
+            <h3>Patient</h3>
+            <p class="text-muted">Access your health dashboard, cognitive tests, and daily activities</p>
+            <a href="/accounts/register/patient/" class="btn" style="margin-top:12px;">Continue →</a>
+        </div>
+        <div class="role-card card">
+            <div class="role-icon"><i class="fa-solid fa-heart" style="font-size:28px;color:var(--secondary-color)"></i></div>
+            <h3>Caregiver</h3>
+            <p class="text-muted">Monitor patients, view alerts, and manage care routines</p>
+            <a href="/accounts/register/caregiver/" class="btn btn-secondary" style="margin-top:12px;">Continue →</a>
+        </div>
+        <div class="role-card card">
+            <div class="role-icon"><i class="fa-solid fa-user-shield" style="font-size:28px;color:#9F7AEA"></i></div>
+            <h3>Administrator</h3>
+            <p class="text-muted">Manage users, assign caregivers, and oversee the system</p>
+            <a href="/accounts/register/" class="btn btn-secondary" style="margin-top:12px;">Continue →</a>
+        </div>
+    </div>
+</section>
+
+<!-- Features row -->
+<section style="background:#fff; padding:36px 0; margin-top: 24px; border-top:1px solid var(--border-color);">
+    <div style="max-width:1200px; margin:0 auto; display:grid; grid-template-columns: repeat(3,1fr); gap:24px; padding: 0 24px;">
+        <div style="text-align:center;">
+            <div style="font-size:36px;">🧠</div>
+            <h4>Gognitive Tracking</h4>
+            <p class="text-muted">Monitor cognitive health with simple, engaging tests.</p>
+        </div>
+        <div style="text-align:center;">
+            <div style="font-size:36px;">💊</div>
+            <h4>Medication Reminders</h4>
+            <p class="text-muted">Never miss a dose with gentle, timely reminders.</p>
+        </div>
+        <div style="text-align:center;">
+            <div style="font-size:36px;">👪</div>
+            <h4>Family Connection</h4>
+            <p class="text-muted">Keep loved ones informed with real-time updates.</p>
+        </div>
+    </div>
+</section>
+
 {% endblock %}

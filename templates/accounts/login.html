@@ -10,6 +10,11 @@
 
     <form method="POST">
         {% csrf_token %}
+        {% if next %}
+        <input type="hidden" name="next" value="{{ next }}">
+        {% elif request.GET.next %}
+        <input type="hidden" name="next" value="{{ request.GET.next }}">
+        {% endif %}
 
         {% if form.non_field_errors %}
         <div class="error-msg">

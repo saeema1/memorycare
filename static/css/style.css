@@ -66,6 +66,85 @@ a {
     width: 100%;
 }
 
+/* Topbar / Header styles (hero-like site header) */
+.topbar {
+    width: 100%;
+    background: var(--bg-white);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 1100;
+}
+.topbar-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+}
+.brand-link {
+    font-weight: 700;
+    color: var(--primary-color);
+    font-size: 20px;
+}
+.primary-nav a {
+    margin: 0 12px;
+    color: var(--text-dark);
+    font-weight: 600;
+}
+.topbar-actions .search-form input {
+    padding: 8px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+}
+
+/* Hero banner (page-level hero, large image + title) */
+.hero-banner {
+    width: 100%;
+    background: linear-gradient(90deg, rgba(59,130,246,0.06), rgba(16,185,129,0.03));
+    padding: 48px 0;
+}
+.hero-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+.hero-title {
+    font-size: 34px;
+    color: var(--primary-color);
+    font-weight: 700;
+}
+
+.badge {
+    display: inline-block;
+    background: #EFF6FF;
+    color: var(--primary-color);
+    padding: 8px 14px;
+    border-radius: 9999px;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+.roles .role-card {
+    text-align: left;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+}
+.role-card h3 { margin: 0; }
+.role-icon { width:48px; height:48px; display:flex; align-items:center; justify-content:center; background:#F3F4F6; border-radius:12px; }
+
+@media (max-width: 900px) {
+    .hero-inner { flex-direction: column; }
+    .roles { grid-template-columns: 1fr; }
+}
+
+
 /* Fixed Sidebar */
 .sidebar {
     width: var(--sidebar-width);
