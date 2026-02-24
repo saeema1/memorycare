@@ -77,7 +77,7 @@ def login_view(request):
 
 def logout_view(request):
     logout(request)
-    return redirect('accounts:login')
+    return redirect('login')
 
 
 def register(request):
@@ -131,7 +131,7 @@ def register_caregiver(request):
 
 def user_logout(request):
     logout(request)
-    return redirect('accounts:login')
+    return redirect('login')
 
 
 @login_required

@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Test Result - MemoryCare{% endblock %}
+
+{% block content %}
+<div class="dashboard-header mb-8">
+    <div style="display: flex; align-items: center; gap: 16px;">
+        <a href="{% url 'dashboard:cognitive_tests' %}" class="btn btn-outline" style="padding: 8px 16px;">
+            <i class="fas fa-arrow-left"></i> Back to Tests
+        </a>
+        <h1 class="text-2xl font-bold">Test Result</h1>
+    </div>
+</div>
+
+<div class="max-w-3xl mx-auto">
+    <div class="card p-10 text-center">
+        <!-- Success Icon -->
+        <div class="mb-6">
+            <div
+                style="width: 80px; height: 80px; background: #ECFDF5; color: #10B981; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px; margin: 0 auto; border: 4px solid #D1FAE5;">
+                <i class="fas fa-trophy"></i>
+            </div>
+        </div>
+
+        <h2 class="text-3xl font-bold mb-2">Test Complete!</h2>
+        <p class="text-muted text-lg mb-8">You have successfully completed <strong>{{ result.test.name }}</strong></p>
+
+        <!-- Score Display -->
+        <div class="score-display mb-10 p-8 rounded-2xl" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+            <p class="text-sm font-bold text-muted uppercase tracking-wider mb-2">Your Score</p>
+            <div class="flex items-center justify-center gap-2">
+                <span class="text-6xl font-black text-primary">{{ result.score }}</span>
+                <span class="text-3xl font-bold text-muted">/ {{ result.max_score }}</span>
+            </div>
+
+            <div class="mt-6">
+                <div
+                    style="width: 100%; height: 12px; background: #e5e7eb; border-radius: 6px; overflow: hidden; margin-bottom: 8px;">
+                    <div style="width: {{ percent }}%; height: 100%; background: var(--primary-color);">
+                    </div>
+                </div>
+                <p class="font-bold text-primary">{{ percent }}% Accuracy</p>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col gap-4">
+            <a href="{% url 'dashboard:take_test' result.test.id %}"
+                class="btn btn-primary px-8 py-4 rounded-xl font-bold text-lg">
+                <i class="fas fa-redo mr-2"></i> Retake Test
+            </a>
+            <a href="{% url 'dashboard:cognitive_tests' %}"
+                class="btn btn-outline px-8 py-4 rounded-xl font-bold text-lg">
+                <i class="fas fa-list mr-2"></i> Browse Other Tests
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .max-w-3xl {
+        max-width: 48rem;
+    }
+
+    .mx-auto {
+        margin-left: auto;
+        margin-right: auto;
+    }
+</style>
+{% endblock %}

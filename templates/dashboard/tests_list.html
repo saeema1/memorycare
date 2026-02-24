@@ -8,8 +8,8 @@
     <div style="display: flex; align-items: center; gap: 16px;">
         <i class="fas fa-brain text-3xl text-primary"></i>
         <div>
-            <h1 class="text-2xl font-bold">Cognitive Tests</h1>
-            <p class="text-muted">Select a test to begin your daily exercise.</p>
+            <h1 class="text-2xl font-bold">Cognitive Exercises</h1>
+            <p class="text-muted">Select a test to begin your daily mental stimulation.</p>
         </div>
     </div>
 </div>
@@ -18,8 +18,12 @@
     {% for test in tests %}
     <div class="card p-6 flex flex-row items-center justify-between transition hover:-translate-y-1">
         <div class="flex items-center gap-6">
-            <div class="{{ test.color }} w-16 h-16 rounded-xl flex items-center justify-center text-2xl">
-                <i class="fas {{ test.icon }}"></i>
+            <div class="w-16 h-16 rounded-xl flex items-center justify-center text-2xl 
+                {% if 'Memory' in test.name %}bg-blue-100 text-blue-600
+                {% elif 'Logic' in test.name %}bg-yellow-100 text-yellow-600
+                {% else %}bg-green-100 text-green-600{% endif %}">
+                <i
+                    class="fas {% if 'Memory' in test.name %}fa-brain{% elif 'Logic' in test.name %}fa-puzzle-piece{% else %}fa-notes-medical{% endif %}"></i>
             </div>
             <div>
                 <h3 class="text-xl font-bold mb-1">{{ test.name }}</h3>
@@ -27,23 +31,21 @@
             </div>
         </div>
 
-        {% if test.completed %}
-        <button class="btn btn-secondary px-6 py-2 rounded-lg flex items-center gap-2" disabled
-            style="opacity: 0.7; cursor: not-allowed;">
-            Completed <i class="fas fa-check text-xs"></i>
-        </button>
-        {% else %}
         <a href="{% url 'dashboard:take_test' test.id %}"
             class="btn btn-primary px-6 py-2 rounded-lg flex items-center gap-2">
             Start <i class="fas fa-chevron-right text-xs"></i>
         </a>
-        {% endif %}
+    </div>
+    {% empty %}
+    <div class="card p-12 text-center">
+        <i class="fas fa-folder-open text-4xl text-muted mb-4"></i>
+        <h3 class="text-xl font-bold">No tests available</h3>
+        <p class="text-muted">Please check back later.</p>
     </div>
     {% endfor %}
 </div>
 
 <style>
-    /* Utility classes for colors if not in main css */
     .bg-blue-100 {
         background-color: #dbeafe;
     }
@@ -74,10 +76,6 @@
 
     .gap-6 {
         gap: 1.5rem;
-    }
-
-    .p-6 {
-        padding: 1.5rem;
     }
 </style>
 {% endblock %}

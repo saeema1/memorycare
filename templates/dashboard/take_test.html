@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ test.name }} - MemoryCare{% endblock %}
+
+{% block content %}
+<div class="dashboard-header mb-8">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 16px;">
+            <a href="{% url 'dashboard:cognitive_tests' %}" class="btn btn-outline" style="padding: 8px 16px;">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+            <div>
+                <h1 class="text-2xl font-bold">{{ test.name }}</h1>
+                <p class="text-muted">Question {{ idx|add:1 }} of {{ total }}</p>
+            </div>
+        </div>
+        <div class="test-progress-mini" style="text-align: right;">
+            <span class="text-sm font-bold text-primary">{{ progress }}% Complete</span>
+            <div
+                style="width: 150px; height: 8px; background: #e5e7eb; border-radius: 4px; margin-top: 4px; overflow: hidden;">
+                <div
+                    style="width: {{ progress }}%; height: 100%; background: var(--primary-color); transition: width 0.3s ease;">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="max-w-3xl mx-auto">
+    <div class="card p-8">
+        {% if question %}
+        <div class="test-question-area mb-8">
+            <h2 class="text-xl font-bold mb-6" style="color: var(--text-dark); line-height: 1.4;">
+                {{ question.text }}
+            </h2>
+
+            <form method="POST" id="test-form">
+                {% csrf_token %}
+                <input type="hidden" name="idx" value="{{ idx }}">
+
+                <div class="grid gap-4">
+                    {% if question.choices %}
+                    {% for choice in question.choices %}
+                    <label class="choice-card p-4 rounded-xl border-2 transition cursor-pointer flex items-center gap-4"
+                        style="border-color: #f3f4f6; background: #fff;">
+                        <input type="radio" name="q{{ idx }}" value="{{ choice }}" class="hidden-radio" required {% if
+                            current_answer==choice %}checked{% endif %}>
+                        <div class="radio-custom"></div>
+                        <span class="text-lg font-medium">{{ choice }}</span>
+                    </label>
+                    {% endfor %}
+                    {% else %}
+                    <div class="form-group">
+                        <textarea name="q{{ idx }}" class="form-control" rows="4" placeholder="Type your answer here..."
+                            required>{{ current_answer|default:'' }}</textarea>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="flex justify-between items-center mt-12">
+                    {% if idx > 0 %}
+                    <a href="?q={{ idx|add:-1 }}" class="btn btn-secondary px-8 py-3 rounded-lg">
+                        <i class="fas fa-chevron-left mr-2"></i> Previous
+                    </a>
+                    {% else %}
+                    <div></div>
+                    {% endif %}
+
+                    <button type="submit" class="btn btn-primary px-10 py-3 rounded-lg font-bold">
+                        {% if idx|add:1 == total %}
+                        Finish Test <i class="fas fa-check-circle ml-2"></i>
+                        {% else %}
+                        Next Question <i class="fas fa-chevron-right ml-2"></i>
+                        {% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <i class="fas fa-exclamation-circle text-4xl text-yellow-500 mb-4"></i>
+            <h2 class="text-xl font-bold">No questions found for this test.</h2>
+            <p class="text-muted mt-2">Please contact your administrator.</p>
+            <a href="{% url 'dashboard:cognitive_tests' %}" class="btn btn-primary mt-6">Return to List</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .choice-card:hover {
+        border-color: var(--primary-color) !important;
+        background-color: #f0f7ff !important;
+    }
+
+    .choice-card input[type="radio"]:checked+.radio-custom {
+        background-color: var(--primary-color);
+        box-shadow: inset 0 0 0 4px #fff;
+    }
+
+    .choice-card input[type="radio"]:checked+.radio-custom+span {
+        color: var(--primary-color);
+    }
+
+    .choice-card input[type="radio"]:checked {
+        border-color: var(--primary-color);
+    }
+
+    .choice-card input:checked {
+        border-color: var(--primary-color) !important;
+        background-color: #f0f7ff !important;
+    }
+
+    .hidden-radio {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 0;
+        height: 0;
+        position: absolute;
+    }
+
+    .radio-custom {
+        width: 20px;
+        height: 20px;
+        border: 2px solid #cbd5e1;
+        border-radius: 50%;
+        flex-shrink: 0;
+        transition: all 0.2s ease;
+    }
+
+    .choice-card.selected {
+        border-color: var(--primary-color) !important;
+        background-color: #f0f7ff !important;
+    }
+
+    input[type="radio"]:checked~.radio-custom {
+        border-color: var(--primary-color);
+        background-color: var(--primary-color);
+        box-shadow: inset 0 0 0 4px #fff;
+    }
+
+    .max-w-3xl {
+        max-width: 48rem;
+    }
+
+    .mx-auto {
+        margin-left: auto;
+        margin-right: auto;
+    }
+</style>
+
+<script>
+    document.querySelectorAll('.choice-card').forEach(card => {
+        card.addEventListener('click', () => {
+            document.querySelectorAll('.choice-card').forEach(c => c.style.borderColor = '#f3f4f6');
+            card.style.borderColor = 'var(--primary-color)';
+            card.querySelector('input').checked = true;
+        });
+    });
+</script>
+{% endblock %}

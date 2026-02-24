@@ -277,8 +277,21 @@ def tests_list(request):
 @login_required
 def cognitive_tests(request):
     """Simple view to list cognitive tests (alias for tests_list where needed)."""
-    from .models import CognitiveTest
+    from .models import CognitiveTest, TestResult
     tests = CognitiveTest.objects.all()
+    # Add status and UI helpers for the professional UI
+    for test in tests:
+        test.completed = TestResult.objects.filter(user=request.user, test=test).exists()
+        # Assign icons and colors based on test name for a premium look
+        if 'Memory' in test.name:
+            test.icon = 'fa-brain'
+            test.color = 'bg-blue-100 text-blue-600'
+        elif 'Logic' in test.name or 'Pattern' in test.name:
+            test.icon = 'fa-puzzle-piece'
+            test.color = 'bg-yellow-100 text-yellow-600'
+        else:
+            test.icon = 'fa-notes-medical'
+            test.color = 'bg-green-100 text-green-600'
     return render(request, 'dashboard/cognitive_tests.html', {'tests': tests})
 
 
@@ -356,9 +369,19 @@ def toggle_activity(request, activity_id):
 
 @login_required
 def take_test(request, test_id):
-    """Per-question flow: show one question per page, store answers in session until final submission."""
+    """Dispatch view: either per-question flow or specialized game template."""
     from .models import CognitiveTest, TestResult
     test = CognitiveTest.objects.get(id=test_id)
+
+    # Dispatch to specialized templates based on name
+    if 'Memory' in test.name:
+        return render(request, 'dashboard/test_memory.html', {'test': test})
+    elif 'Color' in test.name:
+        return render(request, 'dashboard/test_color.html', {'test': test})
+    elif 'Mixed' in test.name:
+        return render(request, 'dashboard/test_mixed.html', {'test': test})
+
+    # Default per-question flow
     questions = test.questions or []
     total = len(questions)
 
@@ -428,11 +451,46 @@ def take_test(request, test_id):
     })
 
 
+@require_POST
+@login_required
+def save_test_result(request):
+    """AJAX view to save results from specialized interactive tests."""
+    from django.http import JsonResponse
+    import json
+    from .models import CognitiveTest, TestResult
+
+    try:
+        data = json.loads(request.body)
+        test_name = data.get('test_name')
+        score = data.get('score', 0)
+        max_score = data.get('max_score', 1)
+
+        test = CognitiveTest.objects.filter(name__icontains=test_name).first()
+        if not test:
+            # Create a placeholder test object if it doesn't exist
+            test = CognitiveTest.objects.create(name=test_name, description=f"Specialized {test_name}")
+
+        result = TestResult.objects.create(
+            user=request.user,
+            test=test,
+            score=score,
+            max_score=max_score,
+            answers={'specialized': True}
+        )
+        return JsonResponse({'status': 'success', 'result_id': result.id})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+
 @login_required
 def test_result(request, test_id, result_id):
     from .models import TestResult
     result = TestResult.objects.get(id=result_id, user=request.user, test_id=test_id)
-    return render(request, 'dashboard/test_result.html', {'result': result})
+    percent = int((result.score / result.max_score) * 100) if result.max_score > 0 else 0
+    return render(request, 'dashboard/test_result.html', {
+        'result': result,
+        'percent': percent
+    })
 
 
 @login_required
