@@ -133,7 +133,7 @@
         {% if patients %}
         <div style="display: flex; flex-direction: column; gap: 16px;">
             {% for p in patients %}
-            <a href="{% url 'dashboard:caregiver_patient_detail' p.id %}" class="card"
+            <a href="{% url 'dashboard:caregiver_patient_detail' p.id %}" class="card patient-card"
                 style="display: flex; justify-content: space-between; align-items: center; text-decoration: none; padding: 24px; transition: transform 0.2s;"
                 onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
                 <div style="display: flex; gap: 16px; align-items: center;">
@@ -142,11 +142,11 @@
                         <i class="fas fa-user"></i>
                     </div>
                     <div>
-                        <h4 class="font-bold" style="font-size: 16px; margin-bottom: 4px; color: var(--text-dark);">
+                        <h4 class="font-bold patient-name" style="font-size: 16px; margin-bottom: 4px; color: var(--text-dark);">
                             {% if p.get_full_name %}
-                                {{ p.get_full_name }}
+                                <span class="patient-name-text">{{ p.get_full_name }}</span>
                             {% else %}
-                                {{ p.username }}
+                                <span class="patient-name-text">{{ p.username }}</span>
                             {% endif %}
                         </h4>
                         <!-- Only show real registered info like age/gender if desired used, but checking 'NAMES only' request -->
@@ -191,8 +191,7 @@
             <tbody>
                 {% for result in recent_results %}
                 <tr style="border-bottom: 1px solid #f3f4f6;">
-                    <td style="padding: 12px; font-weight: 600;">{{ result.user.first_name }} {{ result.user.last_name
-                        }}</td>
+                    <td style="padding: 12px; font-weight: 600;">{% if result.user.get_full_name %}{{ result.user.get_full_name }}{% else %}{{ result.user.username }}{% endif %}</td>
                     <td style="padding: 12px;">{{ result.test.name }}</td>
                     <td style="padding: 12px;">
                         <span

@@ -1,3 +1,11 @@
+.card.p-6.mb-8 {
+    overflow-x: auto;
+    padding-left: 8px; /* small inset so first column isn't flush against card edge */
+}
+.card.p-6.mb-8 table {
+    min-width: 760px; /* allow table to define its own width and enable scrolling */
+}
+
 /* =========================
    VARIABLES & COLOR PALETTE
 ========================= */
@@ -229,7 +237,15 @@ a {
 
 /* Prevent horizontal overflow when elements use full width */
 .app-wrapper {
-    overflow-x: hidden;
+    overflow-x: visible;
+}
+
+/* Allow the main content to shrink inside the flex container and scroll horizontally
+   if inner content (tables, wide lists) exceed the available space. This prevents
+   the fixed sidebar + wrapper from clipping child content. */
+.main-content {
+    min-width: 0;
+    overflow-x: auto;
 }
 
 /* Footer */
@@ -321,6 +337,51 @@ body > .site-footer { flex-shrink: 0; }
 
 .card:hover {
     box-shadow: var(--shadow-md);
+}
+
+/* ===== Caregiver dashboard: patient cards (visual polish only) ===== */
+.patient-card {
+    padding: 20px 24px;
+    align-items: center;
+    display: flex; /* ensure consistent layout */
+    gap: 16px;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.patient-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 14px 40px rgba(15,23,42,0.08);
+}
+.patient-card .patient-name-text {
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text-dark);
+    display: inline-block;
+}
+.patient-card .fa-user {
+    font-size: 18px;
+    color: var(--text-light);
+}
+
+/* Slightly stronger section headings for clarity */
+h3.font-bold.text-lg {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text-dark);
+}
+
+/* Keep patient cards responsive on small screens */
+@media (max-width: 700px) {
+    .patient-card { padding: 16px; }
+    .patient-card .patient-name-text { font-size: 15px; }
+}
+
+/* Ensure first column (patient name) is visible and doesn't collapse on wide layouts */
+.card table th:first-child,
+.card table td:first-child {
+    min-width: 220px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .card-header {

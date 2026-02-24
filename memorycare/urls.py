@@ -19,8 +19,8 @@ def home_redirect(request):
                 return redirect('dashboard:patient_dashboard')
         # Fallback to dashboard home which will perform its own routing
         return redirect('dashboard:home')
-    # If not authenticated redirect to login so login view handles presentation
-    return redirect('accounts:login')
+    # If not authenticated, render the public landing/homepage (do not force-login)
+    return render(request, 'accounts/landing.html')
 
 urlpatterns = [
     path('', home_redirect, name='home'),  # redirect root to login
