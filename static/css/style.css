@@ -209,8 +209,27 @@ a {
     flex: 1 1 auto;
     margin-left: var(--sidebar-width);
     padding: 32px;
-    max-width: 1600px;
+    width: calc(100% - var(--sidebar-width));
+    max-width: none;
     min-height: 0;
+}
+
+/* When authenticated (sidebar present) make header/hero/footer align with main content
+   and allow them to stretch to the full remaining width. This removes centered max-width
+   which caused unused blank space on wide screens. */
+.app-wrapper.authenticated .topbar-inner,
+.app-wrapper.authenticated .hero-inner,
+.app-wrapper.authenticated .footer-inner {
+    max-width: none;
+    width: calc(100% - var(--sidebar-width));
+    margin-left: var(--sidebar-width);
+    padding-left: 24px;
+    padding-right: 24px;
+}
+
+/* Prevent horizontal overflow when elements use full width */
+.app-wrapper {
+    overflow-x: hidden;
 }
 
 /* Footer */
