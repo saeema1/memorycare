@@ -43,7 +43,11 @@
     font-family: "Inter", "Segoe UI", sans-serif;
 }
 
+/* Make the page a full-height flex column so header/content/footer can stack */
+html, body { height: 100%; }
 body {
+    display: flex;
+    flex-direction: column;
     background: var(--bg-body);
     color: var(--text-dark);
     line-height: 1.5;
@@ -62,8 +66,10 @@ a {
 ========================= */
 .app-wrapper {
     display: flex;
-    min-height: 100vh;
+    /* grow to fill available vertical space between header and footer */
+    flex: 1 1 auto;
     width: 100%;
+    min-height: 0;
 }
 
 /* Topbar / Header styles (hero-like site header) */
@@ -118,6 +124,28 @@ a {
     font-weight: 700;
 }
 
+/* Visual hero box (gradient + subtle pattern) */
+.hero-visual {
+    width: 420px;
+    height: 280px;
+    margin: 0 auto;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(16,185,129,0.06));
+    box-shadow: 0 10px 30px rgba(16,24,40,0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+.hero-visual::after {
+    content: "";
+    position: absolute;
+    inset: 12px;
+    border-radius: 12px;
+    background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.6), transparent 20%), radial-gradient(circle at 80% 70%, rgba(255,255,255,0.35), transparent 18%);
+    pointer-events: none;
+}
+
 .badge {
     display: inline-block;
     background: #EFF6FF;
@@ -136,6 +164,22 @@ a {
     align-items: flex-start;
     gap: 12px;
 }
+.roles .role-card { transition: transform 0.18s ease, box-shadow 0.18s ease; }
+.roles .role-card:hover { transform: translateY(-6px); box-shadow: 0 12px 30px rgba(15,23,42,0.08); }
+.role-card p { color: var(--text-light); line-height:1.5 }
+.role-card .btn { padding: 10px 18px; border-radius: 10px; box-shadow: none; }
+.role-card .btn:hover { transform: translateY(-2px); }
+
+/* Primary button styling */
+.btn { display:inline-block; padding:10px 16px; border-radius:10px; background:var(--primary-color); color:#fff; font-weight:700; box-shadow: 0 6px 18px rgba(59,130,246,0.12); border:none; }
+.btn:hover { background: var(--primary-hover); }
+.btn-secondary { background: #F3F4F6; color: var(--text-dark); box-shadow:none; }
+
+/* Improve topbar spacing */
+.topbar-inner { padding: 18px 28px; }
+
+/* Footer smaller text */
+.footer-inner { font-size:13px; color: var(--text-light); }
 .role-card h3 { margin: 0; }
 .role-icon { width:48px; height:48px; display:flex; align-items:center; justify-content:center; background:#F3F4F6; border-radius:12px; }
 
@@ -162,11 +206,23 @@ a {
 
 /* Main Content */
 .main-content {
-    flex: 1;
+    flex: 1 1 auto;
     margin-left: var(--sidebar-width);
     padding: 32px;
     max-width: 1600px;
+    min-height: 0;
 }
+
+/* Footer */
+.site-footer {
+    background: var(--bg-white);
+    border-top: 1px solid var(--border-color);
+    padding: 16px 0;
+}
+.footer-inner { max-width:1200px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; padding:0 24px; color:var(--text-light); font-size:14px; }
+
+/* Ensure footer does not shrink */
+body > .site-footer { flex-shrink: 0; }
 
 /* =========================
    SIDEBAR STYLING

@@ -40,8 +40,7 @@
                 <i class="fas fa-bell"></i>
             </div>
             {% if active_alerts > 0 %}
-            <span style="color: #166534; font-size: 12px; font-weight: 600;"><i class="fas fa-arrow-up"></i> +
-                active_alerts </span>
+            <span style="color: #166534; font-size: 12px; font-weight: 600;"><i class="fas fa-arrow-up"></i> + {{ active_alerts }}</span>
             {% endif %}
         </div>
         <p class="text-muted text-sm" style="margin-bottom: 4px;">Active Alerts</p>
@@ -143,8 +142,13 @@
                         <i class="fas fa-user"></i>
                     </div>
                     <div>
-                        <h4 class="font-bold" style="font-size: 16px; margin-bottom: 4px; color: var(--text-dark);">{{
-                            p.first_name }} {{ p.last_name }}</h4>
+                        <h4 class="font-bold" style="font-size: 16px; margin-bottom: 4px; color: var(--text-dark);">
+                            {% if p.first_name or p.last_name %}
+                                {{ p.first_name|default_if_none:"" }} {{ p.last_name|default_if_none:"" }}
+                            {% else %}
+                                {{ p.username }}
+                            {% endif %}
+                        </h4>
                         <!-- Only show real registered info like age/gender if desired used, but checking 'NAMES only' request -->
                         <!-- User said 'show patient NAMES only inside Your Patients section' -->
                         <!-- But also 'List ONLY patients assigned'. I think Name + maybe slight detail is okay, but I will remove the dummy status pills. -->
