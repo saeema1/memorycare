@@ -15,6 +15,7 @@ urlpatterns = [
     path('patient/tests/', views.tests_list, name='tests_list'),
     path('patient/tests/<int:test_id>/', views.take_test, name='take_test'),
     path('patient/tests/<int:test_id>/result/<int:result_id>/', views.test_result, name='test_result'),
+    path('save-test-result/', views.save_test_result, name='save_test_result'),
     path('cognitive-tests/', views.cognitive_tests, name='cognitive_tests'),
 
     # Mood tracking
