@@ -4,6 +4,50 @@
 {% block title %}Admin Dashboard - MemoryCare{% endblock %}
 
 {% block content %}
+<style>
+    .risk-badge {
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .risk-high {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .risk-moderate {
+        background: #fffbeb;
+        color: #92400e;
+    }
+
+    .risk-low {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .health-score-cell {
+        font-weight: 700;
+        font-size: 14px;
+    }
+
+    .score-good {
+        color: #10b981;
+    }
+
+    .score-warning {
+        color: #f59e0b;
+    }
+
+    .score-danger {
+        color: #ef4444;
+    }
+</style>
 <div class="dashboard-header mb-4">
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
@@ -18,61 +62,120 @@
     </div>
 </div>
 
-<!-- Stats Row -->
-<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px;">
-    <div class="card">
-        <h3 style="color: var(--text-light); font-size: 1rem;">Total Patients</h3>
-        <div style="font-size: 2.5rem; font-weight: bold; color: var(--primary-color);">{{ patients.count }}</div>
+<!-- Stats & ML Risk Summary Row -->
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px;">
+    <div class="card" style="border-top: 4px solid var(--primary-color);">
+        <h3
+            style="color: var(--text-light); font-size: 0.85rem; text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">
+            Total Patients</h3>
+        <div style="display: flex; align-items: baseline; gap: 8px;">
+            <span style="font-size: 2rem; font-weight: 800; color: #1e293b;">{{ total_patients }}</span>
+            <span class="text-xs text-muted">active</span>
+        </div>
     </div>
-    <div class="card">
-        <h3 style="color: var(--text-light); font-size: 1rem;">Total Caregivers</h3>
-        <div style="font-size: 2.5rem; font-weight: bold; color: var(--secondary-color);">{{ caregivers.count }}</div>
+
+    <div class="card" style="border-top: 4px solid #ef4444;">
+        <h3
+            style="color: var(--text-light); font-size: 0.85rem; text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">
+            High Risk Alerts</h3>
+        <div style="display: flex; align-items: baseline; gap: 8px;">
+            <span style="font-size: 2rem; font-weight: 800; color: #ef4444;">{{ high_risk_count }}</span>
+            <span class="text-xs text-muted">require review</span>
+        </div>
     </div>
-    <div class="card">
-        <h3 style="color: var(--text-light); font-size: 1rem;">System Status</h3>
-        <div style="font-size: 2.5rem; font-weight: bold; color: #10B981;">Online</div>
+
+    <div class="card" style="border-top: 4px solid #10b981;">
+        <h3
+            style="color: var(--text-light); font-size: 0.85rem; text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">
+            Avg. Health Score</h3>
+        <div style="display: flex; align-items: baseline; gap: 8px;">
+            <span style="font-size: 2rem; font-weight: 800; color: #10b981;">{{ avg_health_score }}%</span>
+            <span class="text-xs text-muted">system avg</span>
+        </div>
+    </div>
+
+    <div class="card" style="border-top: 4px solid var(--secondary-color);">
+        <h3
+            style="color: var(--text-light); font-size: 0.85rem; text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">
+            System Status</h3>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="width: 10px; height: 10px; background: #10b981; border-radius: 50%;"></span>
+            <span style="font-size: 1.25rem; font-weight: 700; color: #1e293b;">Optimized</span>
+        </div>
     </div>
 </div>
 
 <!-- Patient Management -->
 <div class="card">
-    <div class="card-header" style="margin-bottom: 20px;">
-        <h3>Patient Management</h3>
+    <div class="card-header"
+        style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin: 0;">Patient Risk & Management</h3>
+        <div style="display: flex; gap: 8px;">
+            <button class="btn"
+                style="padding: 6px 12px; font-size: 11px; background: white; border: 1px solid #e2e8f0; color: #64748b;">
+                <i class="fas fa-download"></i> Download ML Report
+            </button>
+        </div>
     </div>
 
     <table style="width: 100%; border-collapse: collapse;">
         <thead>
-            <tr style="text-align: left; border-bottom: 2px solid var(--border-color);">
-                <th style="padding: 10px;">Patient</th>
-                <th style="padding: 10px;">Status</th>
-                <th style="padding: 10px;">Assigned Caregiver</th>
-                <th style="padding: 10px;">Action</th>
+            <tr style="text-align: left; border-bottom: 2px solid var(--border-color); background: #f8fafc;">
+                <th
+                    style="padding: 12px 10px; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">
+                    Patient</th>
+                <th
+                    style="padding: 12px 10px; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">
+                    Risk Level</th>
+                <th
+                    style="padding: 12px 10px; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">
+                    Health Score</th>
+                <th
+                    style="padding: 12px 10px; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">
+                    Assigned Caregiver</th>
+                <th
+                    style="padding: 12px 10px; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">
+                    Action</th>
             </tr>
         </thead>
         <tbody>
             {% for patient in patients %}
-            <tr style="border-bottom: 1px solid var(--border-color);">
+            <tr style="border-bottom: 1px solid var(--border-color); transition: background 0.2s;"
+                onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='white'">
                 <td style="padding: 15px 10px;">
-                    <div style="font-weight: 600;">{{ patient.first_name }} {{ patient.last_name }}</div>
-                    <small class="text-muted">{{ patient.email }}</small>
+                    <div style="font-weight: 700; color: #1e293b;">{{ patient.get_full_name }}</div>
+                    <small class="text-muted">ID: MC-{{ patient.id|stringformat:"04d" }}</small>
                 </td>
                 <td style="padding: 15px 10px;">
-                    {% if patient.assigned_caregiver %}
                     <span
-                        style="background: #DCFCE7; color: #166534; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">Assigned</span>
-                    {% else %}
-                    <span
-                        style="background: #FEF3C7; color: #D97706; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">Unassigned</span>
-                    {% endif %}
+                        class="risk-badge {% if patient.risk_level == 'High Risk' %}risk-high{% elif patient.risk_level == 'Moderate Risk' %}risk-moderate{% else %}risk-low{% endif %}">
+                        <i
+                            class="fas {% if patient.risk_level == 'High Risk' %}fa-exclamation-triangle{% elif patient.risk_level == 'Moderate Risk' %}fa-info-circle{% else %}fa-check-circle{% endif %}"></i>
+                        {{ patient.risk_level }}
+                    </span>
                 </td>
                 <td style="padding: 15px 10px;">
-                    {% if patient.assigned_caregiver %}
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <i class="fas fa-user-nurse" style="color: var(--primary-color);"></i>
-                        {{ patient.assigned_caregiver.first_name }} {{ patient.assigned_caregiver.last_name }}
+                        <span
+                            class="health-score-cell {% if patient.health_score >= 70 %}score-good{% elif patient.health_score >= 40 %}score-warning{% else %}score-danger{% endif %}">
+                            {{ patient.health_score }}%
+                        </span>
+                        <div
+                            style="width: 60px; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden;">
+                            <div
+                                style="width: {{ patient.health_score }}%; height: 100%; background: {% if patient.health_score >= 70 %}#10b981{% elif patient.health_score >= 40 %}#f59e0b{% else %}#ef4444{% endif %};">
+                            </div>
+                        </div>
+                    </div>
+                </td>
+                <td style="padding: 15px 10px;">
+                    {% if patient.assigned_caregiver %}
+                    <div style="display: flex; align-items: center; gap: 8px; color: #475569;">
+                        <i class="fas fa-user-nurse" style="color: var(--primary-color); opacity: 0.7;"></i>
+                        {{ patient.assigned_caregiver.get_full_name }}
                     </div>
                     {% else %}
-                    <span class="text-muted">-</span>
+                    <span class="text-muted" style="font-style: italic;">Unassigned</span>
                     {% endif %}
                 </td>
                 <td style="padding: 15px 10px;">
@@ -82,24 +185,26 @@
                         <input type="hidden" name="patient_id" value="{{ patient.id }}">
 
                         <select name="caregiver_id"
-                            style="padding: 6px; border-radius: 4px; border: 1px solid var(--border-color); width: 150px; margin-bottom: 0;">
+                            style="padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0; width: 140px; margin-bottom: 0; font-size: 12px; color: #475569;">
                             <option value="">-- No Caregiver --</option>
                             {% for c in caregivers %}
-                            <option value="{{ c.id }}">
-                                {{ c.first_name }} {{ c.last_name }}
+                            <option value="{{ c.id }}" {% if patient.assigned_caregiver_id==c.id %}selected{% endif %}>
+                                {{ c.get_full_name }}
                             </option>
                             {% endfor %}
                         </select>
-                        <button type="submit" class="btn" style="padding: 6px 12px; font-size: 12px;">Update</button>
+                        <button type="submit" class="btn"
+                            style="padding: 6px 12px; font-size: 12px; border-radius: 6px;">Update</button>
                     </form>
                 </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="4" style="text-align: center; padding: 30px; color: gray;">
-                    No patients found.
-                    <a href="{% url 'accounts:register_patient' %}" style="color: var(--primary-color);">Add a
-                        patient</a>?
+                <td colspan="5" style="text-align: center; padding: 40px; color: #94a3b8;">
+                    <i class="fas fa-users-slash" style="font-size: 2rem; margin-bottom: 12px; display: block;"></i>
+                    No patients found in the system.
+                    <a href="{% url 'accounts:register_patient' %}"
+                        style="color: var(--primary-color); font-weight: 600;">Register first patient</a>
                 </td>
             </tr>
             {% endfor %}
@@ -107,11 +212,13 @@
     </table>
 
     <div
-        style="padding: 20px; background: #f9fafb; border-top: 1px solid var(--border-color); display: flex; gap: 15px;">
-        <a href="{% url 'accounts:register_patient' %}" class="btn">
+        style="padding: 24px; background: #fff; border-top: 1px solid var(--border-color); display: flex; gap: 15px; border-radius: 0 0 16px 16px;">
+        <a href="{% url 'accounts:register_patient' %}" class="btn"
+            style="box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);">
             <i class="fas fa-plus-circle"></i> Add New Patient
         </a>
-        <a href="{% url 'accounts:register_caregiver' %}" class="btn" style="background: var(--secondary-color);">
+        <a href="{% url 'accounts:register_caregiver' %}" class="btn"
+            style="background: var(--secondary-color); box-shadow: 0 4px 10px rgba(124, 58, 237, 0.2);">
             <i class="fas fa-plus-circle"></i> Add New Caregiver
         </a>
     </div>

@@ -33,4 +33,11 @@ urlpatterns = [
     # Cognitive Tests AJAX
     path('patient/tests/<int:test_id>/ajax/question/', views.test_ajax_question, name='test_ajax_question'),
     path('patient/tests/<int:test_id>/ajax/answer/', views.test_ajax_answer, name='test_ajax_answer'),
+    # Machine Learning APIs
+    path('api/predict-risk/', views.predict_risk_api, name='predict_risk_api_mine'),
+    path('api/predict-risk/<int:patient_id>/', views.predict_risk_api, name='predict_risk_api'),
+    path('api/detect-anomaly/', views.detect_anomaly_api, name='detect_anomaly_api_mine'),
+    path('api/detect-anomaly/<int:patient_id>/', views.detect_anomaly_api, name='detect_anomaly_api'),
+    path('api/health-score/', views.health_score_api, name='health_score_api_mine'),
+    path('api/health-score/<int:patient_id>/', views.health_score_api, name='health_score_api'),
 ]

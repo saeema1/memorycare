@@ -33,7 +33,7 @@ class User(AbstractUser):
     relationship_to_patient = models.CharField(max_length=100, null=True, blank=True, help_text='Relationship to patient (e.g. Spouse)')
 
     # Assignments: a patient can have an assigned doctor and caregiver
-    assigned_doctor = models.ForeignKey(
+    doctor = models.ForeignKey(
         'self',
         null=True,
         blank=True,
@@ -42,12 +42,12 @@ class User(AbstractUser):
         limit_choices_to={'role': 'DOCTOR'}
     )
 
-    assigned_caregiver = models.ForeignKey(
+    caregiver = models.ForeignKey(
         'self',
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
-        related_name='patients_under_caregiver',
+        related_name='assigned_patients',
         limit_choices_to={'role': 'CAREGIVER'}
     )
 
@@ -93,3 +93,27 @@ class Reminder(models.Model):
 
     def __str__(self):
         return f"Reminder for {self.patient.username}: {self.title}"
+
+
+class PatientManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(role='PATIENT')
+
+
+class Patient(User):
+    objects = PatientManager()
+
+    class Meta:
+        proxy = True
+
+
+class CaregiverManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(role='CAREGIVER')
+
+
+class Caregiver(User):
+    objects = CaregiverManager()
+
+    class Meta:
+        proxy = True

@@ -43,14 +43,26 @@ def doctor_dashboard(request):
     patients = User.objects.filter(role='PATIENT').order_by('last_name', 'first_name')
     caregivers = User.objects.filter(role='CAREGIVER').order_by('last_name', 'first_name')
 
+    # Machine Learning Integration: Annotate patients with risk and health scores
+    from ml_module.ml_service import ml_service
+    for p in patients:
+        p.risk_level, p.risk_confidence, _ = ml_service.predict_risk(p)
+        p.health_score = ml_service.get_health_score(p)
+
     total_patients = patients.count()
     total_caregivers = caregivers.count()
+
+    p_list = list(patients)
+    avg_health_score = int(sum(p.health_score for p in p_list) / len(p_list)) if p_list else 0
+    high_risk_count = sum(1 for p in p_list if p.risk_level == 'High Risk')
 
     context = {
         'patients': patients,
         'caregivers': caregivers,
         'total_patients': total_patients,
         'total_caregivers': total_caregivers,
+        'avg_health_score': avg_health_score,
+        'high_risk_count': high_risk_count,
     }
 
     return render(request, 'dashboard/doctor_dashboard.html', context)
@@ -99,6 +111,13 @@ def caregiver_dashboard(request):
     # Patients queryset: include all users with role 'PATIENT'
     from accounts.models import User, Reminder
     patients = User.objects.filter(role='PATIENT').order_by('last_name', 'first_name')
+    
+    # Machine Learning Integration: Annotate patients with risk and health scores
+    from ml_module.ml_service import ml_service
+    for p in patients:
+        p.risk_level, p.risk_confidence, _ = ml_service.predict_risk(p)
+        p.health_score = ml_service.get_health_score(p)
+
     total_patients = patients.count()
 
     # Active alerts (unread reminders) for these patients
@@ -111,12 +130,16 @@ def caregiver_dashboard(request):
     from .models import TestResult
     recent_results = TestResult.objects.filter(user__in=patients).order_by('-created_at')[:8]
 
+    p_list = list(patients)
+    avg_health_score = int(sum(p.health_score for p in p_list) / len(p_list)) if p_list else 0
+
     context = {
         'patients': patients,
         'total_patients': total_patients,
         'active_alerts': active_alerts,
         'alerts': alerts,
         'recent_results': recent_results,
+        'avg_health_score': avg_health_score,
     }
 
     return render(request, 'dashboard/caregiver_dashboard.html', context)
@@ -141,13 +164,16 @@ def patient_dashboard(request):
     today = timezone.localdate()
     reminders_today = request.user.reminders.filter(scheduled_for__date=today).order_by('scheduled_for')
 
-    # Simple health score heuristic (placeholder)
-    total_reminders = request.user.reminders.count()
-    unread_reminders = request.user.reminders.filter(read=False).count()
-    if total_reminders:
-        health_score = max(0, 100 - int((unread_reminders / total_reminders) * 100))
-    else:
-        health_score = 80  # default placeholder
+    # Machine Learning Integration: Health Score & Recommendations
+    from ml_module.ml_service import ml_service
+    health_score = ml_service.get_health_score(request.user)
+    risk_level, _, features = ml_service.predict_risk(request.user)
+    recommendations = ml_service.get_recommendations(risk_level, None, features)[:3]
+
+    if health_score >= 75: health_label = 'Excellent'
+    elif health_score >= 50: health_label = 'Good'
+    elif health_score >= 30: health_label = 'Fair'
+    else: health_label = 'Needs Attention'
 
     # Fetch available cognitive tests from DB
     from .models import CognitiveTest
@@ -262,6 +288,7 @@ def patient_dashboard(request):
         'patient_age': patient_age,
         'patient_last_activity': patient_last_activity,
         'vitals': vitals,
+        'recommendations': recommendations,
     }
 
     return render(request, 'dashboard/patient_dashboard.html', context)
@@ -773,3 +800,112 @@ def activity_create_ajax(request):
         a = form.save()
         return JsonResponse({'ok': True, 'activity': {'id': a.id, 'name': a.name, 'scheduled_for': a.scheduled_for.isoformat(), 'completed': a.completed, 'type': a.activity_type}})
     return JsonResponse({'ok': False, 'errors': form.errors}, status=400)
+
+
+# --- Machine Learning API Endpoints ---
+
+from django.http import JsonResponse
+from ml_module.ml_service import ml_service
+from ml_module.anomaly_detection import detect_anomalies
+from .models import Alert
+import json
+
+
+@login_required
+def predict_risk_api(request, patient_id=None):
+    """
+    POST /api/predict-risk/
+    Predicts cognitive decline risk for the patient.
+    """
+    user = request.user
+    if patient_id and (safe_has_role(user, 'is_doctor') or safe_has_role(user, 'is_caregiver')):
+        from accounts.models import User
+        target_user = get_object_or_404(User, id=patient_id)
+    else:
+        target_user = user
+
+    risk_level, confidence, features = ml_service.predict_risk(target_user)
+    recommendations = ml_service.get_recommendations(risk_level, None, features)
+
+    # Trigger Alert if Risk is High
+    if risk_level == 'High Risk' and target_user.assigned_caregiver:
+        Alert.objects.get_or_create(
+            caregiver=target_user.assigned_caregiver,
+            patient=target_user,
+            alert_type='health',
+            message=f"CRITICAL: High cognitive decline risk predicted for {target_user.get_full_name()} (Confidence: {confidence:.1f}%)",
+            is_read=False
+        )
+
+    return JsonResponse({
+        'status': 'success',
+        'patient_id': target_user.id,
+        'risk_level': risk_level,
+        'confidence': round(confidence, 1),
+        'recommendations': recommendations,
+        'trend': 'Stable' # Placeholder for trend logic
+    })
+
+
+@login_required
+def detect_anomaly_api(request, patient_id=None):
+    """
+    POST /api/detect-anomaly/
+    Detects unusual behavioral patterns.
+    """
+    user = request.user
+    if patient_id and (safe_has_role(user, 'is_doctor') or safe_has_role(user, 'is_caregiver')):
+        from accounts.models import User
+        target_user = get_object_or_404(User, id=patient_id)
+    else:
+        target_user = user
+
+    # In a real system, we'd pull historical data for the Isolation Forest
+    # For now, we use the detect_anomalies function which has a heuristic fallback
+    anomaly_result = detect_anomalies(target_user)
+
+    if anomaly_result['is_anomaly'] and target_user.assigned_caregiver:
+        Alert.objects.get_or_create(
+            caregiver=target_user.assigned_caregiver,
+            patient=target_user,
+            alert_type='other',
+            message=f"ANOMALY DETECTED: {', '.join(anomaly_result['reasons'])} for {target_user.get_full_name()}",
+            is_read=False
+        )
+
+    return JsonResponse({
+        'status': 'success',
+        'patient_id': target_user.id,
+        'is_anomaly': anomaly_result['is_anomaly'],
+        'severity': anomaly_result['severity'],
+        'reasons': anomaly_result['reasons']
+    })
+
+
+@login_required
+def health_score_api(request, patient_id=None):
+    """
+    GET /api/health-score/
+    Returns the composite cognitive health score.
+    """
+    user = request.user
+    if patient_id and (safe_has_role(user, 'is_doctor') or safe_has_role(user, 'is_caregiver')):
+        from accounts.models import User
+        target_user = get_object_or_404(User, id=patient_id)
+    else:
+        target_user = user
+
+    score = ml_service.get_health_score(target_user)
+    
+    return JsonResponse({
+        'status': 'success',
+        'patient_id': target_user.id,
+        'health_score': score,
+        'components': {
+            'cognitive': '40%',
+            'activity': '25%',
+            'medication': '15%',
+            'mood': '10%',
+            'stability': '10%'
+        }
+    })

@@ -47,9 +47,9 @@
     <div style="margin-top: 15px; display: grid; gap: 15px;">
         <div style="padding-bottom: 10px; border-bottom: 1px solid #f0f0f0;">
             <strong>Condition Summary:</strong>
-            style="font-weight: 600; color: {% if condition_label == 'Stable' %}#059669{% elif condition_label ==
-            'Monitoring' %}#2563EB{% else %}#DC2626{% endif %};">
-            {{ condition_label }}</span>
+            <span
+                style="font-weight: 600; color: {% if condition_label == 'Stable' %}#059669{% elif condition_label == 'Monitoring' %}#2563EB{% else %}#DC2626{% endif %};">
+                {{ condition_label }}</span>
         </div>
         <div>
             <strong>Health Score:</strong>
