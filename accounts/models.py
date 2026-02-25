@@ -38,7 +38,7 @@ class User(AbstractUser):
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
-        related_name='patients_under_doctor',
+        related_name='doctor_patients',
         limit_choices_to={'role': 'DOCTOR'}
     )
 
@@ -47,9 +47,20 @@ class User(AbstractUser):
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
-        related_name='assigned_patients',
+        related_name='caregiver_patients',
         limit_choices_to={'role': 'CAREGIVER'}
     )
+
+    # Machine Learning Persistent Fields
+    RISK_CHOICES = [
+        ('Low Risk', 'Low Risk'),
+        ('Moderate Risk', 'Moderate Risk'),
+        ('High Risk', 'High Risk'),
+    ]
+    cognitive_risk = models.CharField(max_length=20, choices=RISK_CHOICES, default='Low Risk')
+    memory_score = models.IntegerField(default=0)
+    behaviour_score = models.IntegerField(default=0)
+    health_score = models.IntegerField(default=0)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

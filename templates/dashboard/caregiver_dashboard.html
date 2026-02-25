@@ -1,310 +1,239 @@
 ﻿{% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Caregiver Dashboard - MemoryCare{% endblock %}
-
-{% block extra_css %}
-<style>
-    .dashboard-container {
-        max-width: 1400px;
-        margin: 0 auto;
-    }
-
-    .stat-card {
-        padding: 24px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .stat-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-    }
-
-    .alert-card {
-        padding: 20px;
-        border-radius: 12px;
-        transition: transform 0.2s;
-        border-left: 4px solid #3b82f6;
-    }
-
-    .alert-card.critical {
-        border-left-color: #ef4444;
-        background: #fef2f2;
-    }
-
-    .alert-card.warning {
-        border-left-color: #f59e0b;
-        background: #fffbeb;
-    }
-
-    .alert-card.info {
-        border-left-color: #3b82f6;
-        background: #eff6ff;
-    }
-
-    .scores-table th {
-        background: #f8fafc;
-        border-bottom: 2px solid #e2e8f0;
-    }
-
-    .scores-table tr:hover td {
-        background: #f1f5f9;
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="dashboard-container">
-    <div class="dashboard-header mb-8">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <h1 class="font-bold text-2xl" style="color: #1e293b;">Caregiver Dashboard</h1>
-                <p class="text-muted">Monitor your patients and manage their care in real-time</p>
-            </div>
-            <div>
-                <span class="badge"
-                    style="background: #e0f2fe; color: #0284c7; padding: 12px 24px; border-radius: 12px; font-weight: 600;">
-                    <i class="fas fa-user-nurse" style="margin-right: 8px;"></i> {{
-                    user.get_full_name|default:user.username }}
-                </span>
-            </div>
-        </div>
-    </div>
-
-    <!-- 4 Stats Cards Row -->
-    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 32px;">
-        <div class="card stat-card">
-            <div class="feature-icon-box"
-                style="background: #E0F2FE; color: #0284C7; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; font-size: 24px;">
-                <i class="fas fa-user-friends"></i>
-            </div>
-            <p class="text-muted text-sm" style="margin-bottom: 4px;">Total Patients</p>
-            <h2 style="font-size: 2.5rem; font-weight: bold; margin: 0; line-height: 1; color: #1e293b;">{{
-                total_patients|default:"0" }}</h2>
-            <p class="text-muted text-xs mt-2">Under your care</p>
-        </div>
-
-        <div class="card stat-card">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div class="feature-icon-box"
-                    style="background: #FFFBEB; color: #D97706; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; font-size: 24px;">
-                    <i class="fas fa-bell"></i>
-                </div>
-                {% if active_alerts > 0 %}
-                <span style="color: #ef4444; font-size: 12px; font-weight: 700;"><i
-                        class="fas fa-exclamation-triangle"></i></span>
-                {% endif %}
-            </div>
-            <p class="text-muted text-sm" style="margin-bottom: 4px;">Active Alerts</p>
-            <h2 style="font-size: 2.5rem; font-weight: bold; margin: 0; line-height: 1; color: #1e293b;">{{
-                active_alerts|default:"0" }}</h2>
-            <p class="text-muted text-xs mt-2">Require attention</p>
-        </div>
-
-        <div class="card stat-card">
-            <div class="feature-icon-box"
-                style="background: #DCFCE7; color: #166534; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; font-size: 24px;">
-                <i class="fas fa-heartbeat"></i>
-            </div>
-            <p class="text-muted text-sm" style="margin-bottom: 4px;">Average Health</p>
-            <h2 style="font-size: 2.5rem; font-weight: bold; margin: 0; line-height: 1; color: #1e293b;">{{
-                avg_health_score|default:"0" }}%</h2>
-            <p class="text-muted text-xs mt-2">Across all patients</p>
-        </div>
-
-        <div class="card stat-card">
-            <div class="feature-icon-box"
-                style="background: #DBEAFE; color: #2563EB; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; font-size: 24px;">
-                <i class="fas fa-clock"></i>
-            </div>
-            <p class="text-muted text-sm" style="margin-bottom: 4px;">Response Time</p>
-            <h2 style="font-size: 2.5rem; font-weight: bold; margin: 0; line-height: 1; color: #1e293b;">15 <span
-                    style="font-size: 1rem; color: #64748b; font-weight: 600;">min</span></h2>
-            <p class="text-muted text-xs mt-2">Average today</p>
-        </div>
-    </div>
-
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-bottom: 32px;">
-        <!-- Recent Alerts Column -->
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
         <div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 class="font-bold text-lg"><i class="fas fa-bell" style="color: #f59e0b; margin-right: 8px;"></i>
-                    Recent Alerts</h3>
-            </div>
-
-            {% if alerts %}
-            <div style="display: flex; flex-direction: column; gap: 16px;">
-                {% for alert in alerts|slice:":3" %}
-                <div
-                    class="card alert-card {% if alert.level == 'critical' %}critical{% elif alert.level == 'warning' %}warning{% else %}info{% endif %}">
-                    <div style="display: flex; gap: 16px; align-items: flex-start;">
-                        <div style="font-size: 24px;">
-                            <i class="fas {% if alert.type == 'medication' %}fa-pills{% elif alert.type == 'activity' %}fa-calendar-times{% elif alert.type == 'mood' %}fa-tired{% elif alert.type == 'cognitive' %}fa-brain{% else %}fa-bell{% endif %}"
-                                style="color: {% if alert.level == 'critical' %}#ef4444{% elif alert.level == 'warning' %}#f59e0b{% else %}#3b82f6{% endif %};"></i>
-                        </div>
-                        <div style="flex: 1;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                                <h4 class="font-bold" style="font-size: 14px; color: #1e293b;">{{
-                                    alert.patient.get_full_name|default:alert.patient.username }}</h4>
-                                <span class="text-xs text-muted">{{ alert.time|timesince }} ago</span>
-                            </div>
-                            <p style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 4px;">{{
-                                alert.title }}</p>
-                            <p class="text-sm" style="color: #64748b; line-height: 1.4;">{{ alert.message }}</p>
-                            <div style="margin-top: 12px; display: flex; justify-content: flex-end;">
-                                <a href="{% url 'dashboard:caregiver_patient_detail' alert.patient.id %}" class="btn"
-                                    style="padding: 6px 14px; font-size: 12px; background: white; color: #1e293b; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: none;">
-                                    View Details <i class="fas fa-chevron-right"
-                                        style="font-size: 10px; margin-left: 4px;"></i>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <div class="card" style="text-align: center; padding: 40px; color: gray;">
-                <i class="fas fa-check-circle" style="font-size: 2em; margin-bottom: 10px; color: #10B981;"></i>
-                <p>All clear! No active alerts.</p>
-            </div>
-            {% endif %}
+            <h1 class="h2 text-primary fw-bold mb-0">Caregiver Dashboard</h1>
+            <p class="text-muted">Welcome back, {{ user.get_full_name|default:user.username }}</p>
         </div>
-
-        <!-- Your Patients Column -->
-        <div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 class="font-bold text-lg"><i class="fas fa-user-friends"
-                        style="color: #1e293b; margin-right: 8px;"></i> Your Patients</h3>
-            </div>
-
-            {% if patients %}
-            <div style="display: flex; flex-direction: column; gap: 16px;">
-                {% for p in patients %}
-                <div class="card patient-card"
-                    style="padding: 0; overflow: hidden; border-radius: 12px; transition: all 0.2s; position: relative;">
-                    <a href="{% url 'dashboard:caregiver_patient_detail' p.id %}"
-                        style="display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; width: 100%;">
-                        <div style="display: flex; gap: 16px; align-items: center;">
-                            <div
-                                style="width: 44px; height: 44px; background: #f3f4f6; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #6b7280;">
-                                <i class="fas fa-user"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold" style="font-size: 15px; margin: 0; color: #111827;">{{
-                                    p.get_full_name|default:p.username }}</h4>
-                                <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
-                                    <span class="text-xs text-muted">MC-{{ p.id|stringformat:"04d" }}</span>
-                                    <span
-                                        style="width: 4px; height: 4px; background: #e5e7eb; border-radius: 50%;"></span>
-                                    <span class="text-xs"
-                                        style="font-weight: 600; color: {% if p.risk_level == 'High Risk' %}#ef4444{% elif p.risk_level == 'Moderate Risk' %}#f59e0b{% else %}#10b981{% endif %};">
-                                        {{ p.risk_level }}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 16px;">
-                            <div style="text-align: right;">
-                                <p class="text-xs text-muted" style="margin-bottom: 2px;">Health Score</p>
-                                <p style="font-weight: 800; color: #1e293b; font-size: 16px; margin: 0;">{{
-                                    p.health_score|default:"--" }}%</p>
-                            </div>
-                            <div style="color: #cbd5e1; font-size: 14px;">
-                                <i class="fas fa-chevron-right"></i>
-                            </div>
-                        </div>
-                    </a>
-                    <!-- Mini progress bar for health score -->
-                    <div
-                        style="position: absolute; bottom: 0; left: 0; height: 3px; width: {{ p.health_score|default:0 }}%; background: {% if p.health_score >= 70 %}#10b981{% elif p.health_score >= 40 %}#f59e0b{% else %}#ef4444{% endif %}; transition: width 0.5s ease;">
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <div class="card" style="text-align: center; padding: 40px; color: gray;">
-                <i class="fas fa-user-slash" style="font-size: 2em; margin-bottom: 10px;"></i>
-                <p>No patients assigned yet.</p>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-
-    {# Cognitive Scores Section #}
-    <div class="card p-0 mb-8" style="overflow: hidden; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
-        <div
-            style="padding: 24px; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between; align-items: center; background: #fafafa;">
-            <h3 class="font-bold text-lg" style="margin: 0; display: flex; align-items: center; gap: 10px;">
-                <i class="fas fa-brain" style="color: #3b82f6;"></i> Recent Cognitive Scores
-            </h3>
-            <span class="text-xs text-muted"
-                style="background: #fff; padding: 4px 12px; border-radius: 20px; border: 1px solid #e5e7eb;">
-                Total: {{ recent_results|length }}
+        <div class="text-end">
+            <span class="badge bg-light text-dark border p-2">
+                <i class="fas fa-calendar-alt me-1"></i> {{ now|date:"D, d M Y" }}
             </span>
         </div>
+    </div>
 
-        {% if recent_results %}
-        <div style="overflow-x: auto; width: 100%; border-radius: 0 0 16px 16px;">
-            <table style="width: 100%; border-collapse: collapse; min-width: 850px;">
-                <thead>
-                    <tr style="background: #fff; border-bottom: 1px solid #f3f4f6;">
-                        <th
-                            style="padding: 20px 24px; text-align: left; color: #6b7280; font-size: 13px; text-transform: uppercase; width: 30%;">
-                            Patient</th>
-                        <th
-                            style="padding: 20px 24px; text-align: left; color: #6b7280; font-size: 13px; text-transform: uppercase; width: 30%;">
-                            Test</th>
-                        <th
-                            style="padding: 20px 24px; text-align: left; color: #6b7280; font-size: 13px; text-transform: uppercase; width: 20%;">
-                            Score</th>
-                        <th
-                            style="padding: 20px 24px; text-align: left; color: #6b7280; font-size: 13px; text-transform: uppercase; width: 20%;">
-                            Date</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for result in recent_results %}
-                    <tr style="border-bottom: 1px solid #f3f4f6; transition: all 0.2s;"
-                        onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
-                        <td style="padding: 18px 24px;">
-                            <div style="display: flex; align-items: center; gap: 12px; white-space: nowrap;">
-                                <div
-                                    style="width: 36px; height: 36px; background: #e0f2fe; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #0369a1; font-size: 14px;">
-                                    <i class="fas fa-user"></i>
-                                </div>
-                                <span style="font-weight: 600; color: #1e293b; font-size: 15px;">{{
-                                    result.user.get_full_name|default:result.user.username }}</span>
-                            </div>
-                        </td>
-                        <td style="padding: 18px 24px; color: #475569; white-space: nowrap;">{{ result.test.name }}</td>
-                        <td style="padding: 18px 24px;">
-                            <span
-                                style="background: {% if result.score >= result.max_score|add:-1 %}#dcfce7{% elif result.score >= result.max_score|divisibleby:2 %}#fef3c7{% else %}#fee2e2{% endif %}; color: {% if result.score >= result.max_score|add:-1 %}#166534{% elif result.score >= result.max_score|divisibleby:2 %}#92400e{% else %}#b91c1c{% endif %}; padding: 6px 14px; border-radius: 8px; font-weight: 700; font-size: 14px; border: 1px solid rgba(0,0,0,0.05); display: inline-block;">
-                                {{ result.score }}/{{ result.max_score }}
-                            </span>
-                        </td>
-                        <td style="padding: 18px 24px; color: #64748b; font-size: 14px; white-space: nowrap;">
-                            <i class="far fa-clock" style="margin-right: 8px; opacity: 0.7;"></i> {{
-                            result.created_at|date:"M d, H:i" }}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <div style="padding: 48px; text-align: center;">
-            <div
-                style="width: 64px; height: 64px; background: #f9fafb; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; color: #d1d5db; font-size: 24px;">
-                <i class="fas fa-clipboard-list"></i>
+    <!-- Quick Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
+                        <i class="fas fa-users text-primary fa-2x"></i>
+                    </div>
+                    <div>
+                        <h6 class="card-subtitle mb-1 text-muted">Total Patients</h6>
+                        <h2 class="card-title mb-0 fw-bold">{{ total_patients }}</h2>
+                    </div>
+                </div>
             </div>
-            <p class="text-muted">No recent test activity from your patients.</p>
         </div>
-        {% endif %}
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle bg-danger bg-opacity-10 p-3 me-3">
+                        <i class="fas fa-bell text-danger fa-2x"></i>
+                    </div>
+                    <div>
+                        <h6 class="card-subtitle mb-1 text-muted">Active Alerts</h6>
+                        <h2 class="card-title mb-0 fw-bold text-danger">{{ active_alerts }}</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3">
+                        <i class="fas fa-heartbeat text-success fa-2x"></i>
+                    </div>
+                    <div>
+                        <h6 class="card-subtitle mb-1 text-muted">Average Health</h6>
+                        <h2 class="card-title mb-0 fw-bold">{{ avg_health_score }}%</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Patient Management Section -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold text-dark">Assigned Patients Monitoring</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-3">Patient</th>
+                                    <th>Cognitive Risk</th>
+                                    <th>Memory Score</th>
+                                    <th>Behavioral Score</th>
+                                    <th class="text-center">Overall Health</th>
+                                    <th class="text-end pe-3">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in patients %}
+                                <tr>
+                                    <td class="ps-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar me-2 bg-secondary rounded-circle text-white d-flex align-items-center justify-content-center"
+                                                style="width: 32px; height: 32px; font-size: 0.8rem;">
+                                                {{ p.first_name|first }}{{ p.last_name|first }}
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold">{{ p.get_full_name }}</div>
+                                                <small class="text-muted">ID: #{{ p.id }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if p.cognitive_risk == 'High Risk' %}
+                                        <span class="badge bg-danger">High Risk</span>
+                                        {% elif p.cognitive_risk == 'Moderate Risk' %}
+                                        <span class="badge bg-warning text-dark">Moderate</span>
+                                        {% else %}
+                                        <span class="badge bg-success">Low Risk</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 me-2" style="height: 6px;">
+                                                <div class="progress-bar bg-info" style="width: {{ p.memory_score }}%">
+                                                </div>
+                                            </div>
+                                            <small>{{ p.memory_score }}%</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 me-2" style="height: 6px;">
+                                                <div class="progress-bar bg-primary"
+                                                    style="width: {{ p.behaviour_score }}%"></div>
+                                            </div>
+                                            <small>{{ p.behaviour_score }}%</small>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span
+                                            class="fw-bold text-{% if p.health_score > 70 %}success{% elif p.health_score > 40 %}warning{% else %}danger{% endif %}">
+                                            {{ p.health_score }}%
+                                        </span>
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <a href="#" class="btn btn-sm btn-outline-primary rounded-pill">View
+                                            Profiles</a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-muted">No patients assigned yet.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar / Recent Alerts Section -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold">Recent System Alerts</h5>
+                    <span class="badge rounded-pill bg-danger">{{ active_alerts }}</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for alert in alerts %}
+                        <div
+                            class="list-group-item p-3 border-start border-4 border-{% if alert.alert_type == 'health' %}danger{% else %}warning{% endif %}">
+                            <div class="d-flex w-100 justify-content-between mb-1">
+                                <h6 class="mb-0 fw-bold">{{ alert.get_alert_type_display }}</h6>
+                                <small class="text-muted">{{ alert.created_at|timesince }} ago</small>
+                            </div>
+                            <p class="mb-1 small text-dark">{{ alert.message|truncatechars:100 }}</p>
+                            <small class="text-primary fw-bold">{{ alert.patient.get_full_name }}</small>
+                        </div>
+                        {% empty %}
+                        <div class="p-4 text-center text-muted">No recent alerts found.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% if alerts %}
+                <div class="card-footer bg-white text-center py-3">
+                    <a href="#" class="btn btn-sm btn-light text-primary fw-bold">View All Alerts</a>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Cognitive Test Snapshots -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold">Latest Test Results</h5>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% for res in recent_results %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-3 py-2">
+                            <div>
+                                <div class="small fw-bold">{{ res.user.get_full_name }}</div>
+                                <small class="text-muted">{{ res.test.name }}</small>
+                            </div>
+                            <span class="badge bg-secondary rounded-pill">{{ res.score }}/{{ res.max_score }}</span>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item p-3 text-center text-muted">No test results recorded.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+
+<style>
+    body {
+        background-color: #f8f9fa;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .card {
+        transition: transform 0.2s ease, shadow 0.2s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .08) !important;
+    }
+
+    .avatar {
+        flex-shrink: 0;
+    }
+
+    .badge {
+        padding: 0.5em 0.8em;
+        font-weight: 500;
+    }
+
+    .progress {
+        background-color: #e9ecef;
+    }
+
+    .table th {
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        color: #6c757d;
+        font-weight: 700;
+    }
+</style>
 {% endblock %}

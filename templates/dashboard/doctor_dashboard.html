@@ -1,226 +1,178 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Admin Dashboard - MemoryCare{% endblock %}
-
 {% block content %}
-<style>
-    .risk-badge {
-        padding: 4px 10px;
-        border-radius: 8px;
-        font-size: 12px;
-        font-weight: 700;
-        border: 1px solid rgba(0, 0, 0, 0.05);
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-    }
-
-    .risk-high {
-        background: #fee2e2;
-        color: #b91c1c;
-    }
-
-    .risk-moderate {
-        background: #fffbeb;
-        color: #92400e;
-    }
-
-    .risk-low {
-        background: #dcfce7;
-        color: #166534;
-    }
-
-    .health-score-cell {
-        font-weight: 700;
-        font-size: 14px;
-    }
-
-    .score-good {
-        color: #10b981;
-    }
-
-    .score-warning {
-        color: #f59e0b;
-    }
-
-    .score-danger {
-        color: #ef4444;
-    }
-</style>
-<div class="dashboard-header mb-4">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
         <div>
-            <h1 class="font-bold text-xl">Admin Dashboard</h1>
-            <p class="text-muted">System management and patient assignment</p>
+            <h1 class="h2 text-dark fw-bold mb-0">Doctor's Medical Portal</h1>
+            <p class="text-muted">Clinical Overview for Dr. {{ user.last_name|default:user.username }}</p>
         </div>
-        <div>
-            <span class="badge" style="background: #e0f2fe; color: #0284c7; padding: 10px 20px; border-radius: 20px;">
-                <i class="fas fa-user-md"></i> {{ user.first_name }} (Admin)
-            </span>
-        </div>
-    </div>
-</div>
-
-<!-- Stats & ML Risk Summary Row -->
-<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px;">
-    <div class="card" style="border-top: 4px solid var(--primary-color);">
-        <h3
-            style="color: var(--text-light); font-size: 0.85rem; text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">
-            Total Patients</h3>
-        <div style="display: flex; align-items: baseline; gap: 8px;">
-            <span style="font-size: 2rem; font-weight: 800; color: #1e293b;">{{ total_patients }}</span>
-            <span class="text-xs text-muted">active</span>
-        </div>
-    </div>
-
-    <div class="card" style="border-top: 4px solid #ef4444;">
-        <h3
-            style="color: var(--text-light); font-size: 0.85rem; text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">
-            High Risk Alerts</h3>
-        <div style="display: flex; align-items: baseline; gap: 8px;">
-            <span style="font-size: 2rem; font-weight: 800; color: #ef4444;">{{ high_risk_count }}</span>
-            <span class="text-xs text-muted">require review</span>
-        </div>
-    </div>
-
-    <div class="card" style="border-top: 4px solid #10b981;">
-        <h3
-            style="color: var(--text-light); font-size: 0.85rem; text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">
-            Avg. Health Score</h3>
-        <div style="display: flex; align-items: baseline; gap: 8px;">
-            <span style="font-size: 2rem; font-weight: 800; color: #10b981;">{{ avg_health_score }}%</span>
-            <span class="text-xs text-muted">system avg</span>
-        </div>
-    </div>
-
-    <div class="card" style="border-top: 4px solid var(--secondary-color);">
-        <h3
-            style="color: var(--text-light); font-size: 0.85rem; text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">
-            System Status</h3>
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="width: 10px; height: 10px; background: #10b981; border-radius: 50%;"></span>
-            <span style="font-size: 1.25rem; font-weight: 700; color: #1e293b;">Optimized</span>
-        </div>
-    </div>
-</div>
-
-<!-- Patient Management -->
-<div class="card">
-    <div class="card-header"
-        style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
-        <h3 style="margin: 0;">Patient Risk & Management</h3>
-        <div style="display: flex; gap: 8px;">
-            <button class="btn"
-                style="padding: 6px 12px; font-size: 11px; background: white; border: 1px solid #e2e8f0; color: #64748b;">
-                <i class="fas fa-download"></i> Download ML Report
+        <div class="d-flex gap-2">
+            <a href="{% url 'accounts:register' %}" class="btn btn-primary d-flex align-items-center">
+                <i class="fas fa-user-plus me-2"></i> Add New Patient
+            </a>
+            <button class="btn btn-outline-secondary">
+                <i class="fas fa-file-export"></i> Reports
             </button>
         </div>
     </div>
 
-    <table style="width: 100%; border-collapse: collapse;">
-        <thead>
-            <tr style="text-align: left; border-bottom: 2px solid var(--border-color); background: #f8fafc;">
-                <th
-                    style="padding: 12px 10px; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">
-                    Patient</th>
-                <th
-                    style="padding: 12px 10px; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">
-                    Risk Level</th>
-                <th
-                    style="padding: 12px 10px; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">
-                    Health Score</th>
-                <th
-                    style="padding: 12px 10px; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">
-                    Assigned Caregiver</th>
-                <th
-                    style="padding: 12px 10px; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">
-                    Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for patient in patients %}
-            <tr style="border-bottom: 1px solid var(--border-color); transition: background 0.2s;"
-                onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='white'">
-                <td style="padding: 15px 10px;">
-                    <div style="font-weight: 700; color: #1e293b;">{{ patient.get_full_name }}</div>
-                    <small class="text-muted">ID: MC-{{ patient.id|stringformat:"04d" }}</small>
-                </td>
-                <td style="padding: 15px 10px;">
-                    <span
-                        class="risk-badge {% if patient.risk_level == 'High Risk' %}risk-high{% elif patient.risk_level == 'Moderate Risk' %}risk-moderate{% else %}risk-low{% endif %}">
-                        <i
-                            class="fas {% if patient.risk_level == 'High Risk' %}fa-exclamation-triangle{% elif patient.risk_level == 'Moderate Risk' %}fa-info-circle{% else %}fa-check-circle{% endif %}"></i>
-                        {{ patient.risk_level }}
-                    </span>
-                </td>
-                <td style="padding: 15px 10px;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span
-                            class="health-score-cell {% if patient.health_score >= 70 %}score-good{% elif patient.health_score >= 40 %}score-warning{% else %}score-danger{% endif %}">
-                            {{ patient.health_score }}%
-                        </span>
-                        <div
-                            style="width: 60px; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden;">
-                            <div
-                                style="width: {{ patient.health_score }}%; height: 100%; background: {% if patient.health_score >= 70 %}#10b981{% elif patient.health_score >= 40 %}#f59e0b{% else %}#ef4444{% endif %};">
-                            </div>
-                        </div>
+    <!-- Metrics Row -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm border-start border-4 border-primary h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="text-muted mb-0">Total Managed Patients</h6>
+                        <i class="fas fa-user-md text-primary opacity-50"></i>
                     </div>
-                </td>
-                <td style="padding: 15px 10px;">
-                    {% if patient.assigned_caregiver %}
-                    <div style="display: flex; align-items: center; gap: 8px; color: #475569;">
-                        <i class="fas fa-user-nurse" style="color: var(--primary-color); opacity: 0.7;"></i>
-                        {{ patient.assigned_caregiver.get_full_name }}
+                    <h2 class="fw-bold mb-0">{{ total_patients }}</h2>
+                    <div class="mt-2">
+                        <span class="text-success small"><i class="fas fa-arrow-up"></i> Active tracking</span>
                     </div>
-                    {% else %}
-                    <span class="text-muted" style="font-style: italic;">Unassigned</span>
-                    {% endif %}
-                </td>
-                <td style="padding: 15px 10px;">
-                    <form action="{% url 'dashboard:assign_caregiver' %}" method="POST"
-                        style="display: flex; gap: 8px; align-items: center; margin: 0;">
-                        {% csrf_token %}
-                        <input type="hidden" name="patient_id" value="{{ patient.id }}">
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm border-start border-4 border-danger h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="text-muted mb-0">High Risk Alerts</h6>
+                        <i class="fas fa-exclamation-triangle text-danger opacity-50"></i>
+                    </div>
+                    <h2 class="fw-bold mb-0 text-danger">{{ high_risk_count }}</h2>
+                    <div class="mt-2">
+                        <span class="text-muted small">Requires clinical review</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm border-start border-4 border-success h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="text-muted mb-0">Avg. Health Index</h6>
+                        <i class="fas fa-chart-line text-success opacity-50"></i>
+                    </div>
+                    <h2 class="fw-bold mb-0">{{ avg_health_score }}%</h2>
+                    <div class="mt-2">
+                        <span class="text-success small">Stable cohort</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm border-start border-4 border-info h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="text-muted mb-0">Active Caregivers</h6>
+                        <i class="fas fa-hands-helping text-info opacity-50"></i>
+                    </div>
+                    <h2 class="fw-bold mb-0">{{ caregivers.count }}</h2>
+                    <div class="mt-2">
+                        <span class="text-muted small">Support network</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                        <select name="caregiver_id"
-                            style="padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0; width: 140px; margin-bottom: 0; font-size: 12px; color: #475569;">
-                            <option value="">-- No Caregiver --</option>
-                            {% for c in caregivers %}
-                            <option value="{{ c.id }}" {% if patient.assigned_caregiver_id==c.id %}selected{% endif %}>
-                                {{ c.get_full_name }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                        <button type="submit" class="btn"
-                            style="padding: 6px 12px; font-size: 12px; border-radius: 6px;">Update</button>
-                    </form>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="5" style="text-align: center; padding: 40px; color: #94a3b8;">
-                    <i class="fas fa-users-slash" style="font-size: 2rem; margin-bottom: 12px; display: block;"></i>
-                    No patients found in the system.
-                    <a href="{% url 'accounts:register_patient' %}"
-                        style="color: var(--primary-color); font-weight: 600;">Register first patient</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <div
-        style="padding: 24px; background: #fff; border-top: 1px solid var(--border-color); display: flex; gap: 15px; border-radius: 0 0 16px 16px;">
-        <a href="{% url 'accounts:register_patient' %}" class="btn"
-            style="box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);">
-            <i class="fas fa-plus-circle"></i> Add New Patient
-        </a>
-        <a href="{% url 'accounts:register_caregiver' %}" class="btn"
-            style="background: var(--secondary-color); box-shadow: 0 4px 10px rgba(124, 58, 237, 0.2);">
-            <i class="fas fa-plus-circle"></i> Add New Caregiver
-        </a>
+    <!-- Patient Directory -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold">Patient Clinical Status</h5>
+            <div class="input-group w-auto">
+                <input type="text" class="form-control form-control-sm" placeholder="Search patient...">
+                <button class="btn btn-sm btn-outline-secondary"><i class="fas fa-search"></i></button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Patient Name</th>
+                            <th>ML Risk Level</th>
+                            <th>Memory Index</th>
+                            <th>Behavioral Index</th>
+                            <th class="text-center">Health Score</th>
+                            <th class="text-end pe-4">Clinical Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in patients %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-bold">{{ p.get_full_name }}</div>
+                                <div class="small text-muted">DOB: {{ p.date_of_birth|default:"N/A" }}</div>
+                            </td>
+                            <td>
+                                {% if p.cognitive_risk == 'High Risk' %}
+                                <span class="badge rounded-pill bg-danger">Critical Risk</span>
+                                {% elif p.cognitive_risk == 'Moderate Risk' %}
+                                <span class="badge rounded-pill bg-warning text-dark">Moderate</span>
+                                {% else %}
+                                <span class="badge rounded-pill bg-success">Low Risk</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center" style="min-width: 120px;">
+                                    <div class="progress flex-grow-1" style="height: 5px;">
+                                        <div class="progress-bar bg-info" style="width: {{ p.memory_score }}%"></div>
+                                    </div>
+                                    <span class="ms-2 small">{{ p.memory_score }}%</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center" style="min-width: 120px;">
+                                    <div class="progress flex-grow-1" style="height: 5px;">
+                                        <div class="progress-bar bg-primary" style="width: {{ p.behaviour_score }}%">
+                                        </div>
+                                    </div>
+                                    <span class="ms-2 small">{{ p.behaviour_score }}%</span>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <div
+                                    class="h5 mb-0 fw-bold text-{% if p.health_score > 70 %}success{% elif p.health_score > 40 %}warning{% else %}danger{% endif %}">
+                                    {{ p.health_score }}%
+                                </div>
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-light border dropdown-toggle" type="button"
+                                        data-bs-toggle="dropdown">
+                                        Actions
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="#"><i class="fas fa-stethoscope me-2"></i>
+                                                clinical Review</a></li>
+                                        <li><a class="dropdown-item" href="#"><i class="fas fa-history me-2"></i> Test
+                                                History</a></li>
+                                        <li>
+                                            <hr class="dropdown-divider">
+                                        </li>
+                                        <li><a class="dropdown-item text-primary" href="#"><i
+                                                    class="fas fa-user-edit me-2"></i> Reassign</a></li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <i class="fas fa-user-slash fa-3x text-light mb-3"></i>
+                                <p class="text-muted">You currently have no patients assigned to your care.</p>
+                                <a href="{% url 'accounts:register' %}" class="btn btn-primary">Register New Patient</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

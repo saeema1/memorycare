@@ -37,30 +37,26 @@ def doctor_dashboard(request):
     if not safe_has_role(request.user, 'is_doctor'):
         messages.error(request, 'Doctor access required')
         return redirect('dashboard:home')
-    # Query patients and caregivers and pass them to the template
-    from accounts.models import User, Reminder
+    
+    from accounts.models import User
+    from ml_module.ml_service import ml_service
 
-    patients = User.objects.filter(role='PATIENT').order_by('last_name', 'first_name')
+    # Strict Filtering: Only patients assigned to this doctor
+    patients = User.objects.filter(role='PATIENT', doctor=request.user).order_by('last_name', 'first_name')
     caregivers = User.objects.filter(role='CAREGIVER').order_by('last_name', 'first_name')
 
-    # Machine Learning Integration: Annotate patients with risk and health scores
-    from ml_module.ml_service import ml_service
+    # Trigger ML Sync for these patients
     for p in patients:
-        p.risk_level, p.risk_confidence, _ = ml_service.predict_risk(p)
-        p.health_score = ml_service.get_health_score(p)
+        ml_service.sync_patient_ml_data(p)
 
     total_patients = patients.count()
-    total_caregivers = caregivers.count()
-
-    p_list = list(patients)
-    avg_health_score = int(sum(p.health_score for p in p_list) / len(p_list)) if p_list else 0
-    high_risk_count = sum(1 for p in p_list if p.risk_level == 'High Risk')
+    avg_health_score = int(sum(p.health_score for p in patients) / total_patients) if total_patients > 0 else 0
+    high_risk_count = sum(1 for p in patients if p.cognitive_risk == 'High Risk')
 
     context = {
         'patients': patients,
         'caregivers': caregivers,
         'total_patients': total_patients,
-        'total_caregivers': total_caregivers,
         'avg_health_score': avg_health_score,
         'high_risk_count': high_risk_count,
     }
@@ -108,36 +104,36 @@ def caregiver_dashboard(request):
         messages.error(request, 'Caregiver access required')
         return redirect('dashboard:home')
 
-    # Patients queryset: include all users with role 'PATIENT'
     from accounts.models import User, Reminder
-    patients = User.objects.filter(role='PATIENT').order_by('last_name', 'first_name')
-    
-    # Machine Learning Integration: Annotate patients with risk and health scores
     from ml_module.ml_service import ml_service
+    from .models import TestResult, Alert
+
+    # Strict Filtering: Only patients assigned to this caregiver
+    patients = User.objects.filter(role='PATIENT', caregiver=request.user).order_by('last_name', 'first_name')
+    
+    # Trigger ML Sync for these patients
     for p in patients:
-        p.risk_level, p.risk_confidence, _ = ml_service.predict_risk(p)
-        p.health_score = ml_service.get_health_score(p)
+        ml_service.sync_patient_ml_data(p)
 
     total_patients = patients.count()
 
-    # Active alerts (unread reminders) for these patients
-    active_alerts = Reminder.objects.filter(patient__in=patients, read=False).count()
+    # Active alerts (unread Alerts) for assigned patients
+    active_alerts_count = Alert.objects.filter(patient__in=patients, is_read=False).count()
 
-    # Recent alerts (most recent reminders for these patients)
-    alerts = Reminder.objects.filter(patient__in=patients).order_by('-scheduled_for')[:5]
+    # Recent alerts for these patients
+    recent_alerts = Alert.objects.filter(patient__in=patients).order_by('-created_at')[:5]
 
     # Recent cognitive test results for these patients
-    from .models import TestResult
     recent_results = TestResult.objects.filter(user__in=patients).order_by('-created_at')[:8]
 
-    p_list = list(patients)
-    avg_health_score = int(sum(p.health_score for p in p_list) / len(p_list)) if p_list else 0
+    # Calculate average health score
+    avg_health_score = int(sum(p.health_score for p in patients) / total_patients) if total_patients > 0 else 0
 
     context = {
         'patients': patients,
         'total_patients': total_patients,
-        'active_alerts': active_alerts,
-        'alerts': alerts,
+        'active_alerts': active_alerts_count,
+        'alerts': recent_alerts,
         'recent_results': recent_results,
         'avg_health_score': avg_health_score,
     }

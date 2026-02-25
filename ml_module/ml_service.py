@@ -27,40 +27,88 @@ class MLService:
         return self._model
 
     def predict_risk(self, user):
-        """Returns (Risk Level, Confidence Score)"""
+        """Returns (Risk Level, Confidence Score, Features)"""
         model = self.get_model()
         features = get_patient_features(user, days=30)
         
         # Prepare for prediction
         X = pd.DataFrame([features]).drop(['total_data_points'], axis=1, errors='ignore')
-        # Ensure column order matches training if possible, but RF handles it if names match
-        # Actually joblib'd model might expect specific order if it was trained on numpy array
-        # Let's just use the numeric values in order
         X_numeric = X.select_dtypes(include=[np.number])
         
         try:
             prediction = model.predict(X_numeric)[0]
             probs = model.predict_proba(X_numeric)[0]
             confidence = max(probs) * 100
-        except Exception as e:
+        except Exception:
             # Fallback to heuristic if model fails
             prediction = "Moderate Risk"
             confidence = 50.0
             
         return prediction, confidence, features
 
+    def sync_patient_ml_data(self, user):
+        """
+        Runs inference and syncs all ML fields to the database.
+        Also triggers automated alerts for high risk.
+        """
+        risk_level, confidence, features = self.predict_risk(user)
+        
+        # Calculate sub-scores (0-100)
+        memory_score = int(features['avg_cognitive_score'] * 100)
+        
+        # Behavior score: compound of activity compliance and mood stability
+        # Weights: consistency (60%), med adherence (20%), mood stability (20%)
+        behavior_score = int(
+            (features['activity_consistency'] * 60) +
+            ((1 - features['missed_med_freq']) * 20) +
+            (max(0, 1 - features['mood_instability']/2) * 20)
+        )
+        
+        health_score = self.get_health_score(user)
+        
+        # Persist to User model
+        user.cognitive_risk = risk_level
+        user.memory_score = memory_score
+        user.behaviour_score = behavior_score
+        user.health_score = int(health_score)
+        user.save()
+        
+        # Auto-Alert for High Risk
+        if risk_level == 'High Risk':
+            from dashboard.models import Alert
+            # Check if an unread high-risk alert already exists today to avoid spam
+            from django.utils import timezone
+            today = timezone.now().date()
+            existing = Alert.objects.filter(
+                patient=user, 
+                alert_type='health', 
+                created_at__date=today,
+                is_read=False
+            ).exists()
+            
+            if not existing:
+                Alert.objects.create(
+                    patient=user,
+                    caregiver=user.caregiver, # Might be None, that's okay for system alerts
+                    alert_type='health',
+                    message=f"CRITICAL: High cognitive risk detected for {user.get_full_name()}. Health Score: {health_score}%. Please review immediately."
+                )
+        
+        return {
+            'risk_level': risk_level,
+            'memory_score': memory_score,
+            'behaviour_score': behavior_score,
+            'health_score': health_score
+        }
+
     def get_health_score(self, user):
         """Calculates composite cognitive health score (0-100)"""
         f = get_patient_features(user, days=30)
         
-        # Weights: 40, 25, 15, 10, 10
         cog_score = min(f['avg_cognitive_score'] * 100, 100) * 0.40
         act_score = min(f['activity_consistency'] * 100, 100) * 0.25
-        med_score = min((1 - f['miss_med_freq']) * 100, 100) * 0.15 if 'miss_med_freq' in f else 15
+        med_score = min((1 - f['missed_med_freq']) * 100, 100) * 0.15 if 'miss_med_freq' in f else 15
         mood_score = min((f['avg_mood'] / 5) * 100, 100) * 0.10
-        
-        # Behavioral stability: 1 - mood instability (scaled)
-        # Assuming max instability is around 2 (e.g. jumping between 1 and 5)
         stability = max(0, 1 - (f['mood_instability'] / 2)) * 100
         stab_score = stability * 0.10
         
