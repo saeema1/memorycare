@@ -332,13 +332,13 @@ def cognitive_tests(request):
         # Assign icons and colors based on test name for a premium look
         if 'Memory' in test.name:
             test.icon = 'fa-brain'
-            test.color = 'bg-blue-100 text-blue-600'
+            test.color_style = 'background: var(--primary-light); color: var(--primary-color);'
         elif 'Logic' in test.name or 'Pattern' in test.name:
             test.icon = 'fa-puzzle-piece'
-            test.color = 'bg-yellow-100 text-yellow-600'
+            test.color_style = 'background: #fef3c7; color: #d97706;'
         else:
             test.icon = 'fa-notes-medical'
-            test.color = 'bg-green-100 text-green-600'
+            test.color_style = 'background: #dcfce7; color: #166534;'
     return render(request, 'dashboard/cognitive_tests.html', {'tests': tests})
 
 

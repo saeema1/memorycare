@@ -11,7 +11,7 @@ class Alert(models.Model):
         ('other', 'Other'),
     ]
 
-    caregiver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='alerts')
+    caregiver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='alerts', null=True, blank=True)
     patient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='triggered_alerts')
     alert_type = models.CharField(max_length=20, choices=ALERT_TYPES, default='other')
     message = models.TextField()

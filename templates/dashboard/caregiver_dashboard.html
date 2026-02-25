@@ -7,7 +7,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
         <div>
             <h1 class="h2 text-primary fw-bold mb-0">Caregiver Dashboard</h1>
-            <p class="text-muted">Welcome back, {{ user.get_full_name|default:user.username }}</p>
+            <p class="text-muted">Welcome back, {{ request.user.get_full_name|default:request.user.username }}</p>
         </div>
         <div class="text-end">
             <span class="badge bg-light text-dark border p-2">
