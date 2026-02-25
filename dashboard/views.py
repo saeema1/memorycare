@@ -24,7 +24,7 @@ def home(request):
     if safe_has_role(request.user, 'is_doctor'):
         return redirect('dashboard:doctor_dashboard')
     elif safe_has_role(request.user, 'is_caregiver'):
-        return redirect('dashboard:caregiver_dashboard')
+        return redirect('dashboard:doctor_dashboard')
     elif safe_has_role(request.user, 'is_patient'):
         return redirect('dashboard:patient_dashboard')
     else:
@@ -34,15 +34,22 @@ def home(request):
 
 @login_required
 def doctor_dashboard(request):
-    if not safe_has_role(request.user, 'is_doctor'):
-        messages.error(request, 'Doctor access required')
+    is_doctor = safe_has_role(request.user, 'is_doctor')
+    is_caregiver = safe_has_role(request.user, 'is_caregiver')
+    
+    if not (is_doctor or is_caregiver):
+        messages.error(request, 'Access denied')
         return redirect('dashboard:home')
     
     from accounts.models import User
     from ml_module.ml_service import ml_service
 
-    # Strict Filtering: Only patients assigned to this doctor
-    patients = User.objects.filter(role='PATIENT', doctor=request.user).order_by('last_name', 'first_name')
+    # Filter patients based on role
+    if is_doctor:
+        patients = User.objects.filter(role='PATIENT', doctor=request.user).order_by('last_name', 'first_name')
+    else:
+        patients = User.objects.filter(role='PATIENT', caregiver=request.user).order_by('last_name', 'first_name')
+    
     caregivers = User.objects.filter(role='CAREGIVER').order_by('last_name', 'first_name')
 
     # Trigger ML Sync for these patients
