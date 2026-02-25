@@ -47,6 +47,12 @@ class TestResult(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.test.name} ({self.score}/{self.max_score})"
 
+    @property
+    def percentage(self):
+        if self.max_score > 0:
+            return (self.score / self.max_score) * 100
+        return 0
+
 
 class MoodEntry(models.Model):
     MOOD_CHOICES = [

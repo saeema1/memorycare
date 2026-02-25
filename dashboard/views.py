@@ -111,30 +111,26 @@ def caregiver_dashboard(request):
     # Strict Filtering: Only patients assigned to this caregiver
     patients = User.objects.filter(role='PATIENT', caregiver=request.user).order_by('last_name', 'first_name')
     
-    # Trigger ML Sync for these patients
+    # Trigger ML Sync for these patients to ensure dashboard is fresh
     for p in patients:
         ml_service.sync_patient_ml_data(p)
 
-    total_patients = patients.count()
+    total_patients_count = patients.count()
 
-    # Active alerts (unread Alerts) for assigned patients
+    # Active unread Alerts for assigned patients
     active_alerts_count = Alert.objects.filter(patient__in=patients, is_read=False).count()
 
     # Recent alerts for these patients
     recent_alerts = Alert.objects.filter(patient__in=patients).order_by('-created_at')[:5]
 
-    # Recent cognitive test results for these patients
-    recent_results = TestResult.objects.filter(user__in=patients).order_by('-created_at')[:8]
-
-    # Calculate average health score
-    avg_health_score = int(sum(p.health_score for p in patients) / total_patients) if total_patients > 0 else 0
+    # Calculate cohort average health
+    avg_health_score = int(sum(p.health_score for p in patients) / total_patients_count) if total_patients_count > 0 else 0
 
     context = {
         'patients': patients,
-        'total_patients': total_patients,
+        'total_patients': total_patients_count,
         'active_alerts': active_alerts_count,
         'alerts': recent_alerts,
-        'recent_results': recent_results,
         'avg_health_score': avg_health_score,
     }
 
@@ -143,10 +139,38 @@ def caregiver_dashboard(request):
 
 @login_required
 def caregiver_patient_detail(request, pk):
-    """Detail view for caregivers to view assigned patient info."""
+    """Secure detailed view for caregivers to monitor assigned patients."""
+    if not safe_has_role(request.user, 'is_caregiver'):
+        messages.error(request, 'Caregiver access required')
+        return redirect('dashboard:home')
+
     from accounts.models import User
-    patient = get_object_or_404(User, id=pk)
-    return render(request, 'dashboard/caregiver_patient_detail.html', {'patient': patient})
+    from .models import TestResult, Alert
+    from ml_module.ml_service import ml_service
+
+    # Fetch patient and verify ownership/assignment
+    patient = get_object_or_404(User, id=pk, role='PATIENT')
+    
+    if patient.caregiver != request.user:
+        messages.error(request, "Access Denied: This patient is not assigned to you.")
+        return redirect('dashboard:caregiver_dashboard')
+
+    # Force a fresh ML sync for the detail page
+    ml_data = ml_service.sync_patient_ml_data(patient)
+
+    # History aggregation
+    test_history = TestResult.objects.filter(user=patient).order_by('-created_at')
+    alert_history = Alert.objects.filter(patient=patient).order_by('-created_at')
+
+    context = {
+        'patient': patient,
+        'test_history': test_history,
+        'alert_history': alert_history,
+        'ml_data': ml_data,
+        'last_sync': patient.updated_at,
+    }
+    
+    return render(request, 'dashboard/caregiver_patient_detail.html', context)
 
 
 @login_required
