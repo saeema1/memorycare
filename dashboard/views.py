@@ -43,14 +43,24 @@ def doctor_dashboard(request):
     
     from accounts.models import User
     from ml_module.ml_service import ml_service
+    from .models import TestResult
 
-    # Filter patients based on role (use the new field names `doctor` / `caregiver`)
+    # Base patient set: all patients under this doctor / caregiver
     if is_doctor:
-        # Patients whose `doctor` is the logged-in user
-        patients = User.objects.filter(role='PATIENT', doctor=request.user).order_by('last_name', 'first_name')
+        patients_base = User.objects.filter(role='PATIENT', doctor=request.user)
     else:
         # Caregivers see patients where they are the assigned caregiver
-        patients = User.objects.filter(role='PATIENT', caregiver=request.user).order_by('last_name', 'first_name')
+        patients_base = User.objects.filter(role='PATIENT', caregiver=request.user)
+
+    # --- Apply clinical readiness rules ---
+    # 1) Patient must have at least one cognitive test result
+    # 2) Patient must be assigned to a caregiver (caregiver is not null)
+    tested_ids = TestResult.objects.filter(user__in=patients_base) \
+        .values_list('user_id', flat=True).distinct()
+    clinical_patients = patients_base.filter(
+        id__in=tested_ids,
+        caregiver__isnull=False
+    ).order_by('last_name', 'first_name')
     
     # Get caregivers under this doctor's network
     if is_doctor:
@@ -64,20 +74,37 @@ def doctor_dashboard(request):
         # For caregivers viewing, show all caregivers in the system (could be limited later)
         caregivers = User.objects.filter(role='CAREGIVER').order_by('last_name', 'first_name')
 
-    # Trigger ML Sync for these patients
-    for p in patients:
-        ml_service.sync_patient_ml_data(p)
+    # Trigger ML Sync only for clinically ready patients (with tests + caregiver)
+    for p in clinical_patients:
+        try:
+            ml_service.sync_patient_ml_data(p)
+        except Exception as e:
+            # Log error or skip to maintain stability
+            pass
 
-    total_patients = patients.count()
-    avg_health_score = int(sum(p.health_score for p in patients) / total_patients) if total_patients > 0 else 0
-    high_risk_count = sum(1 for p in patients if p.cognitive_risk == 'High Risk')
+    # Metrics: header can show total registered, while averages use only clinical patients
+    total_registered_patients = patients_base.count()
+    clinical_count = clinical_patients.count()
+    
+    # Defensive sum for health scores
+    health_scores = [getattr(p, 'health_score', 0) or 0 for p in clinical_patients]
+    avg_health_score = int(sum(health_scores) / clinical_count) if clinical_count > 0 else 0
+    high_risk_count = sum(1 for p in clinical_patients if getattr(p, 'cognitive_risk', '') == 'High Risk')
+    
+    # Count total evaluations (cognitive tests) completed
+    evaluation_count = TestResult.objects.filter(user__in=patients_base).count()
 
     context = {
-        'patients': patients,
+        # All registered patients under this doctor/caregiver (for simple name list)
+        'patients_all': patients_base.order_by('last_name', 'first_name'),
+        # Clinically ready patients (tests completed + caregiver assigned)
+        'patients_clinical': clinical_patients,
         'caregivers': caregivers,
-        'total_patients': total_patients,
+        'total_patients_registered': total_registered_patients,
+        'total_patients_clinical': clinical_count,
         'avg_health_score': avg_health_score,
         'high_risk_count': high_risk_count,
+        'evaluation_count': evaluation_count,
     }
 
     return render(request, 'dashboard/doctor_dashboard.html', context)
@@ -97,14 +124,14 @@ def assign_caregiver(request):
 
     from accounts.models import User
 
-    patient = get_object_or_404(User, id=patient_id)
+    patient = get_object_or_404(User, id=patient_id, doctor=request.user)
     # Ensure patient role matches expectation (tolerant check)
     if getattr(patient, 'role', '').upper() != 'PATIENT':
         messages.error(request, 'Invalid patient selected')
         return redirect('dashboard:doctor_dashboard')
 
     if caregiver_id:
-        caregiver = get_object_or_404(User, id=caregiver_id)
+        caregiver = get_object_or_404(User, id=caregiver_id, doctor=request.user)
         if getattr(caregiver, 'role', '').upper() != 'CAREGIVER':
             messages.error(request, 'Invalid caregiver selected')
             return redirect('dashboard:doctor_dashboard')
@@ -114,7 +141,7 @@ def assign_caregiver(request):
         patient.caregiver = None
 
     patient.save()
-    messages.success(request, 'Caregiver assignment updated')
+    messages.success(request, f'Caregiver assignment updated for {patient.get_full_name() or patient.username}')
     return redirect('dashboard:doctor_dashboard')
 
 
@@ -144,7 +171,8 @@ def caregiver_dashboard(request):
     recent_alerts = Alert.objects.filter(patient__in=patients).order_by('-created_at')[:5]
 
     # Calculate cohort average health
-    avg_health_score = int(sum(p.health_score for p in patients) / total_patients_count) if total_patients_count > 0 else 0
+    health_scores = [getattr(p, 'health_score', 0) or 0 for p in patients]
+    avg_health_score = int(sum(health_scores) / total_patients_count) if total_patients_count > 0 else 0
 
     context = {
         'patients': patients,

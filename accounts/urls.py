@@ -10,6 +10,7 @@ urlpatterns = [
     path('register/', views.register, name='register'),
     path('register/patient/', views.register_patient, name='register_patient'),
     path('register/caregiver/', views.register_caregiver, name='register_caregiver'),
+    path('register/doctor/', views.register_doctor, name='register_doctor'),
 
     # Patient-specific
     path('profile/', views.profile, name='profile'),

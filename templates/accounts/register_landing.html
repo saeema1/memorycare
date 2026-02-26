@@ -9,14 +9,26 @@
         <p>Please select your role to continue</p>
     </div>
 
-    <div style="display: flex; gap: 20px; justify-content: center; margin: 40px 0;">
-
+    <div style="display: flex; gap: 20px; justify-content: center; margin: 40px 0; flex-wrap: wrap;">
+        <a href="{% url 'accounts:register' %}" class="btn"
+            style="padding: 20px 40px; display: block; width: 200px; text-decoration: none; background-color: #e0edff; color: #2563eb; border-radius: 12px; border: 1px solid #c0d8ff;">
+            <div style="font-size: 3em; margin-bottom: 15px;"><i class="fas fa-user-injured"></i></div>
+            <h3>Patient</h3>
+            <p style="font-size: 0.9em; opacity: 0.8;">I am seeking care</p>
+        </a>
 
         <a href="{% url 'accounts:register_caregiver' %}" class="btn"
-            style="padding: 20px 40px; display: block; width: 200px; text-decoration: none; background-color: var(--secondary-color);">
+            style="padding: 20px 40px; display: block; width: 200px; text-decoration: none; background-color: #e6f7ef; color: #059669; border-radius: 12px; border: 1px solid #c6f0da;">
             <div style="font-size: 3em; margin-bottom: 15px;"><i class="fas fa-user-nurse"></i></div>
             <h3>Caregiver</h3>
             <p style="font-size: 0.9em; opacity: 0.8;">I am caring for someone</p>
+        </a>
+
+        <a href="{% url 'accounts:register_doctor' %}" class="btn"
+            style="padding: 20px 40px; display: block; width: 200px; text-decoration: none; background-color: #f1eafe; color: #7c3aed; border-radius: 12px; border: 1px solid #e1d3fb;">
+            <div style="font-size: 3em; margin-bottom: 15px;"><i class="fas fa-user-md"></i></div>
+            <h3>Doctor</h3>
+            <p style="font-size: 0.9em; opacity: 0.8;">I am a medical professional</p>
         </a>
     </div>
 

@@ -83,19 +83,30 @@
 
             <div class="form-row">
                 <div class="form-group">
-                    <label>Relationship to Patient</label>
-                    {{ form.relationship_to_patient }}
-                    {% if form.relationship_to_patient.errors %}
-                    <div class="error-msg">{{ form.relationship_to_patient.errors }}</div>
-                    {% endif %}
+                    <label>Specialization</label>
+                    {{ form.specialization }}
+                    {% if form.specialization.errors %}<div class="error-msg">{{ form.specialization.errors }}</div>{%
+                    endif %}
                 </div>
+                <div class="form-group">
+                    <label>License Number</label>
+                    {{ form.license_number }}
+                    {% if form.license_number.errors %}<div class="error-msg">{{ form.license_number.errors }}</div>{%
+                    endif %}
+                </div>
+            </div>
 
+            <div class="form-row">
                 <div class="form-group">
                     <label>Years of Experience</label>
                     {{ form.caregiving_experience_years }}
                     {% if form.caregiving_experience_years.errors %}
                     <div class="error-msg">{{ form.caregiving_experience_years.errors }}</div>
                     {% endif %}
+                </div>
+                <div class="form-group">
+                    <label>Assigned Doctor</label>
+                    {{ form.doctor }}
                 </div>
             </div>
 

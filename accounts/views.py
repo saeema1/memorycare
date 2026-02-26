@@ -67,8 +67,9 @@ def login_view(request):
                 return redirect('dashboard:doctor_dashboard')
             elif role == 'CAREGIVER':
                 return redirect('dashboard:caregiver_dashboard')
-            else:
+            elif role == 'PATIENT':
                 return redirect('dashboard:patient_dashboard')
+            return redirect('dashboard:home')
     else:
         form = UserLoginForm(request)
 
@@ -85,7 +86,7 @@ def register(request):
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Registration successful. Please login.')
+            # Success message removed as requested by user
             return redirect('accounts:login')
     else:
         form = UserRegistrationForm()
@@ -95,45 +96,65 @@ def register(request):
 
 @login_required
 def register_patient(request):
-    from django.shortcuts import render, redirect
-    # PatientRegistrationForm is an alias to the patient/user registration form
+    """Doctor or Caregiver registers a new patient."""
+    is_doctor = safe_has_role(request.user, 'is_doctor')
+    is_caregiver = safe_has_role(request.user, 'is_caregiver')
+    
+    if not (is_doctor or is_caregiver):
+        messages.error(request, 'Access denied')
+        return redirect('dashboard:home')
+
     if request.method == 'POST':
         form = PatientRegistrationForm(request.POST)
         if form.is_valid():
             patient = form.save(commit=False)
-            # Ensure role uses model's choice value
             patient.role = 'PATIENT'
-            # Automatically link this patient to the logged-in doctor (admin)
-            # so they appear under that doctor's care on the dashboard.
-            if getattr(request.user, 'role', '').upper() == 'DOCTOR':
-                from .models import User
-                # store the doctor relationship on the patient
+            
+            # Logic: If Doctor is registering, set patient.doctor
+            if is_doctor:
                 patient.doctor = request.user
+            # If Caregiver is registering, set patient.caregiver AND link patient to caregiver's doctor
+            elif is_caregiver:
+                patient.caregiver = request.user
+                if request.user.doctor:
+                    patient.doctor = request.user.doctor
+            
             patient.save()
-            return redirect('dashboard:doctor_dashboard')
+            messages.success(request, f'Patient {patient.get_full_name()} successfully registered.')
+            return redirect('dashboard:doctor_dashboard' if is_doctor else 'dashboard:caregiver_dashboard')
     else:
-        form = PatientRegistrationForm()
+        # Pre-fill doctor/caregiver based on who is logged in
+        initial = {}
+        if is_doctor:
+            initial['doctor'] = request.user
+        elif is_caregiver:
+            initial['caregiver'] = request.user
+            if request.user.doctor:
+                initial['doctor'] = request.user.doctor
+        form = PatientRegistrationForm(initial=initial)
 
     return render(request, 'accounts/register_patient.html', {'form': form})
 
 
 @login_required
 def register_caregiver(request):
-    """Simple caregiver registration endpoint used by admins/doctors."""
-    from django.shortcuts import render, redirect
-    # Reuse PatientRegistrationForm for the example; ideally create a dedicated CaregiverRegistrationForm
+    """Doctor registers a new caregiver."""
+    if not safe_has_role(request.user, 'is_doctor'):
+        messages.error(request, 'Doctor access required')
+        return redirect('dashboard:home')
+
+    from .forms import CaregiverRegistrationForm
     if request.method == 'POST':
-        form = PatientRegistrationForm(request.POST)
+        form = CaregiverRegistrationForm(request.POST)
         if form.is_valid():
             caregiver = form.save(commit=False)
             caregiver.role = 'CAREGIVER'
-            # Link caregiver under the current doctor so assignments are clear
-            if getattr(request.user, 'role', '').upper() == 'DOCTOR':
-                caregiver.doctor = request.user
+            caregiver.doctor = request.user
             caregiver.save()
+            messages.success(request, f'Caregiver {caregiver.get_full_name()} successfully registered.')
             return redirect('dashboard:doctor_dashboard')
     else:
-        form = PatientRegistrationForm()
+        form = CaregiverRegistrationForm(initial={'doctor': request.user})
 
     return render(request, 'accounts/register_caregiver.html', {'form': form})
 
@@ -201,3 +222,18 @@ def reminder_mark_read(request, reminder_id):
     reminder.save()
     messages.success(request, 'Reminder marked as read')
     return redirect('accounts:reminders')
+
+
+def register_doctor(request):
+    """Public registration for doctors to set up the system."""
+    from .forms import DoctorRegistrationForm
+    if request.method == 'POST':
+        form = DoctorRegistrationForm(request.POST)
+        if form.is_valid():
+            doctor = form.save()
+            # Success message removed per user request
+            return redirect('accounts:login')
+    else:
+        form = DoctorRegistrationForm()
+
+    return render(request, 'accounts/register_doctor.html', {'form': form})

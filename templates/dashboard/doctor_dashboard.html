@@ -7,7 +7,6 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h1 class="h2 text-dark fw-bold mb-0">{% if user.is_doctor %}Medical Portal{% else %}Caregiver Portal{% endif %}</h1>
-            <p class="text-muted">Clinical Overview for {% if user.is_doctor %}Dr. {% endif %}{{ request.user.get_full_name|default:request.user.username }}</p>
         </div>
         <div class="d-flex gap-2">
             <a href="{% url 'accounts:register_patient' %}" class="btn btn-primary d-flex align-items-center">
@@ -28,10 +27,10 @@
             <div class="card border-0 shadow-sm border-start border-4 border-primary h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="text-muted mb-0">Total Managed Patients</h6>
+                        <h6 class="text-muted mb-0">Total Registered Patients</h6>
                         <i class="fas fa-user-md text-primary opacity-50"></i>
                     </div>
-                    <h2 class="fw-bold mb-0">{{ total_patients }}</h2>
+                    <h2 class="fw-bold mb-0">{{ total_patients_registered }}</h2>
                     <div class="mt-2">
                         <span class="text-success small"><i class="fas fa-arrow-up"></i> Active tracking</span>
                     </div>
@@ -82,7 +81,53 @@
         </div>
     </div>
 
-    <!-- Patient Directory -->
+    <!-- Simple Registered Patients List -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold">Registered Patients</h5>
+        </div>
+        <div class="card-body">
+            {% if patients_all %}
+            <ul class="list-group list-group-flush">
+                {% for p in patients_all %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-semibold">{{ p.get_full_name|default:p.username }}</div>
+                        <div class="small text-muted">
+                            {% if p.caregiver %}
+                            Caregiver: {{ p.caregiver.get_full_name|default:p.caregiver.username }}
+                            {% else %}
+                            <span class="text-warning">No caregiver assigned</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="badge bg-light text-muted">
+                            {% if p in patients_clinical %}
+                            Clinically ready
+                            {% else %}
+                            Awaiting tests / assignment
+                            {% endif %}
+                        </span>
+                        {% if not p.caregiver %}
+                        <button class="btn btn-sm btn-outline-primary assign-btn" data-patient-id="{{ p.id }}"
+                            data-patient-name="{{ p.get_full_name|default:p.username }}" data-bs-toggle="modal"
+                            data-bs-target="#assignCaregiverModal">
+                            <i class="fas fa-user-plus me-1"></i> Assign
+                        </button>
+                        {% endif %}
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-muted mb-0">No patients have been registered yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Patient Clinical Status (only after 3rd evaluation) -->
+    {% if evaluation_count >= 3 %}
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
             <h5 class="mb-0 fw-bold">Patient Clinical Status</h5>
@@ -105,7 +150,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for p in patients %}
+                        {% for p in patients_clinical %}
                         <tr>
                             <td class="ps-4">
                                 <div class="fw-bold">{{ p.get_full_name }}</div>
@@ -123,24 +168,26 @@
                             <td>
                                 <div class="d-flex align-items-center" style="min-width: 120px;">
                                     <div class="progress flex-grow-1" style="height: 5px;">
-                                        <div class="progress-bar bg-info" style="width: {{ p.memory_score }}%"></div>
+                                        <div class="progress-bar bg-info"
+                                            style="width: {{ p.memory_score|default:0 }}%"></div>
                                     </div>
-                                    <span class="ms-2 small">{{ p.memory_score }}%</span>
+                                    <span class="ms-2 small">{{ p.memory_score|default:0 }}%</span>
                                 </div>
                             </td>
                             <td>
                                 <div class="d-flex align-items-center" style="min-width: 120px;">
                                     <div class="progress flex-grow-1" style="height: 5px;">
-                                        <div class="progress-bar bg-primary" style="width: {{ p.behaviour_score }}%">
+                                        <div class="progress-bar bg-primary"
+                                            style="width: {{ p.behaviour_score|default:0 }}%">
                                         </div>
                                     </div>
-                                    <span class="ms-2 small">{{ p.behaviour_score }}%</span>
+                                    <span class="ms-2 small">{{ p.behaviour_score|default:0 }}%</span>
                                 </div>
                             </td>
                             <td class="text-center">
                                 <div
                                     class="h5 mb-0 fw-bold text-{% if p.health_score > 70 %}success{% elif p.health_score > 40 %}warning{% else %}danger{% endif %}">
-                                    {{ p.health_score }}%
+                                    {{ p.health_score|default:0 }}%
                                 </div>
                             </td>
                             <td class="text-end pe-4">
@@ -157,8 +204,10 @@
                                         <li>
                                             <hr class="dropdown-divider">
                                         </li>
-                                        <li><a class="dropdown-item text-primary" href="#"><i
-                                                    class="fas fa-user-edit me-2"></i> Reassign</a></li>
+                                        <li><a class="dropdown-item text-primary assign-btn" href="#"
+                                                data-patient-id="{{ p.id }}" data-patient-name="{{ p.get_full_name }}"
+                                                data-bs-toggle="modal" data-bs-target="#assignCaregiverModal">
+                                                <i class="fas fa-user-edit me-2"></i> Reassign</a></li>
                                     </ul>
                                 </div>
                             </td>
@@ -167,8 +216,15 @@
                         <tr>
                             <td colspan="6" class="text-center py-5">
                                 <i class="fas fa-user-slash fa-3x text-light mb-3"></i>
-                                <p class="text-muted">You currently have no patients assigned to your care.</p>
-                                <a href="{% url 'accounts:register_patient' %}" class="btn btn-primary">Register New Patient</a>
+                                <p class="text-muted mb-1">
+                                    No clinical data yet. Patients will appear here after:
+                                </p>
+                                <p class="text-muted small mb-2">
+                                    1) A caregiver is assigned, and 2) The patient completes at least one cognitive
+                                    test.
+                                </p>
+                                <a href="{% url 'accounts:register_patient' %}" class="btn btn-primary">Register New
+                                    Patient</a>
                             </td>
                         </tr>
                         {% endfor %}
@@ -177,6 +233,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
 
     <!-- Caregiver Directory -->
     <div class="card border-0 shadow-sm mt-4">
@@ -225,7 +282,8 @@
                                     <ul class="dropdown-menu">
                                         <li><a class="dropdown-item" href="#"><i class="fas fa-users me-2"></i>
                                                 View Patients</a></li>
-                                        <li><a class="dropdown-item" href="#"><i class="fas fa-phone me-2"></i> Contact</a></li>
+                                        <li><a class="dropdown-item" href="#"><i class="fas fa-phone me-2"></i>
+                                                Contact</a></li>
                                         <li>
                                             <hr class="dropdown-divider">
                                         </li>
@@ -252,4 +310,57 @@
         </div>
     </div>
 </div>
+
+<!-- Assign Caregiver Modal -->
+<div class="modal fade" id="assignCaregiverModal" tabindex="-1" aria-labelledby="assignCaregiverModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="assignCaregiverModalLabel">Assign Caregiver</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'dashboard:assign_caregiver' %}" method="POST">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <p>Select a caregiver for <strong id="modalPatientName"></strong></p>
+                    <input type="hidden" name="patient_id" id="modalPatientId">
+
+                    <div class="mb-3">
+                        <label for="caregiverSelect" class="form-label">Caregiver</label>
+                        <select name="caregiver_id" id="caregiverSelect" class="form-select" required>
+                            <option value="">-- Select Caregiver --</option>
+                            {% for c in caregivers %}
+                            <option value="{{ c.id }}">{{ c.get_full_name|default:c.username }} ({{
+                                c.specialization|default:"General" }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Assignment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const assignButtons = document.querySelectorAll('.assign-btn');
+        const modalPatientName = document.getElementById('modalPatientName');
+        const modalPatientId = document.getElementById('modalPatientId');
+
+        assignButtons.forEach(btn => {
+            btn.addEventListener('click', function () {
+                const patientId = this.getAttribute('data-patient-id');
+                const patientName = this.getAttribute('data-patient-name');
+
+                modalPatientId.value = patientId;
+                modalPatientName.textContent = patientName;
+            });
+        });
+    });
+</script>
 {% endblock %}

@@ -32,23 +32,27 @@ class User(AbstractUser):
     caregiving_experience_years = models.PositiveSmallIntegerField(null=True, blank=True, help_text='Years of caregiving experience')
     relationship_to_patient = models.CharField(max_length=100, null=True, blank=True, help_text='Relationship to patient (e.g. Spouse)')
 
-    # Assignments: a patient can have an assigned doctor and caregiver
+    # Assignments: Patient → Caregiver → Doctor
+    # Doctor is the primary administrator for both Caregivers and Patients
     doctor = models.ForeignKey(
         'self',
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
-        related_name='doctor_patients',
-        limit_choices_to={'role': 'DOCTOR'}
+        related_name='staff_members',
+        limit_choices_to={'role': 'DOCTOR'},
+        help_text='The Doctor responsible for this user (Doctor/Caregiver/Patient)'
     )
 
+    # Patient has an assigned caregiver
     caregiver = models.ForeignKey(
         'self',
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
-        related_name='caregiver_patients',
-        limit_choices_to={'role': 'CAREGIVER'}
+        related_name='assigned_patients',
+        limit_choices_to={'role': 'CAREGIVER'},
+        help_text='The Caregiver assigned to this Patient'
     )
 
     # Machine Learning Persistent Fields

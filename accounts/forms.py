@@ -8,7 +8,15 @@ class UserRegistrationForm(UserCreationForm):
     
     class Meta:
         model = User
-        fields = ['username', 'email', 'first_name', 'last_name', 'password1', 'password2', 'phone_number', 'date_of_birth', 'address', 'emergency_contact_name', 'emergency_contact_phone', 'alzheimers_duration_years']
+        fields = [
+            'username', 'email', 'first_name', 'last_name', 
+            'phone_number', 'date_of_birth', 'address', 
+            'gender', 'emergency_contact_name', 'emergency_contact_phone', 
+            'alzheimers_duration_years', 'caregiver', 'doctor'
+        ]
+        widgets = {
+            'date_of_birth': forms.DateInput(attrs={'type': 'date'}),
+        }
 
     def clean(self):
         cleaned = super().clean()
@@ -53,5 +61,43 @@ class PatientProfileForm(forms.ModelForm):
         }
 
 
-# Backwards-compatibility alias: some modules expect `PatientRegistrationForm`
-PatientRegistrationForm = UserRegistrationForm
+class CaregiverRegistrationForm(UserCreationForm):
+    email = forms.EmailField(required=True)
+
+    class Meta:
+        model = User
+        fields = [
+            'username', 'email', 'first_name', 'last_name',
+            'phone_number', 'specialization', 'license_number',
+            'caregiving_experience_years', 'doctor'
+        ]
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.role = 'CAREGIVER'
+        if commit:
+            user.save()
+        return user
+
+
+class DoctorRegistrationForm(UserCreationForm):
+    email = forms.EmailField(required=True)
+
+    class Meta:
+        model = User
+        fields = [
+            'username', 'email', 'first_name', 'last_name',
+            'phone_number', 'specialization', 'license_number'
+        ]
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.role = 'DOCTOR'
+        if commit:
+            user.save()
+        return user
+
+
+class PatientRegistrationForm(UserRegistrationForm):
+    """Alias for backwards compatibility with refinements for patient context"""
+    pass
