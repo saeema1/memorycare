@@ -25,14 +25,16 @@ class UserSerializer(serializers.ModelSerializer):
         }
     
     def get_assigned_doctor(self, obj):
-        if obj.assigned_doctor:
-            d = obj.assigned_doctor
+        # Map to the `doctor` field on the User model
+        d = getattr(obj, 'doctor', None)
+        if d:
             return {'id': d.id, 'username': d.username, 'first_name': d.first_name, 'last_name': d.last_name, 'email': d.email}
         return None
 
     def get_assigned_caregiver(self, obj):
-        if obj.assigned_caregiver:
-            c = obj.assigned_caregiver
+        # Map to the `caregiver` field on the User model
+        c = getattr(obj, 'caregiver', None)
+        if c:
             return {'id': c.id, 'username': c.username, 'first_name': c.first_name, 'last_name': c.last_name, 'email': c.email}
         return None
 

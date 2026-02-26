@@ -1,671 +1,258 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
+    <title>MemoryCare | Home</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MemoryCare | AI-Based Alzheimer’s Care</title>
 
-    <!-- Google Fonts: Inter & Poppins -->
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;600;700;800&display=swap"
-        rel="stylesheet">
-
-    <!-- Font Awesome for Icons (Optional but better for UI) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        :root {
-            --primary-blue: #2563eb;
-            --secondary-blue: #3b82f6;
-            --soft-purple: #7c3aed;
-            --bg-gradient: linear-gradient(135deg, #f0f7ff 0%, #f5f3ff 100%);
-            --text-dark: #1f2937;
-            --text-gray: #4b5563;
-            --white: #ffffff;
-            --shadow-soft: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
-            --shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            --transition: all 0.3s ease;
-        }
-
         * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f9fafb;
-            color: var(--text-dark);
-            line-height: 1.6;
-            overflow-x: hidden;
-        }
-
-        h1,
-        h2,
-        h3,
-        h4,
-        .logo {
-            font-family: 'Poppins', sans-serif;
-            font-weight: 700;
-        }
-
-        a {
-            text-decoration: none;
-            transition: var(--transition);
-        }
-
-        ul {
-            list-style: none;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
+            background: #f9fbfd;
+            color: #1f2937;
         }
 
         /* ---------- NAVBAR ---------- */
         header {
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 15px 0;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            transition: var(--transition);
-        }
-
-        .navbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding: 20px 60px;
+            background: #ffffff;
+            border-bottom: 1px solid #e5e7eb;
         }
 
         .logo {
-            font-size: 24px;
-            color: var(--primary-blue);
             display: flex;
             align-items: center;
             gap: 10px;
+            font-size: 22px;
+            font-weight: 700;
+            color: #2563eb;
         }
 
-        .logo i {
-            color: var(--soft-purple);
-        }
-
-        nav ul {
-            display: flex;
-            gap: 30px;
-            align-items: center;
-        }
-
-        nav ul li a {
-            color: var(--text-gray);
+        nav a {
+            margin-left: 30px;
+            text-decoration: none;
             font-weight: 500;
-            font-size: 16px;
+            color: #374151;
         }
 
-        nav ul li a:hover {
-            color: var(--primary-blue);
+        nav a.btn {
+            padding: 8px 18px;
+            border: 1px solid #2563eb;
+            border-radius: 20px;
+            color: #2563eb;
         }
 
-        .nav-btns {
-            display: flex;
-            gap: 15px;
-        }
-
-        .btn-login {
-            color: var(--primary-blue);
-            font-weight: 600;
-            padding: 8px 20px;
-        }
-
-        .btn-register {
-            background: linear-gradient(90deg, var(--primary-blue), var(--soft-purple));
-            color: var(--white);
-            padding: 10px 24px;
-            border-radius: 50px;
-            font-weight: 600;
-            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.2);
-        }
-
-        .btn-register:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.3);
-        }
-
-        /* ---------- HERO SECTION ---------- */
+        /* ---------- HERO ---------- */
         .hero {
-            padding: 120px 0 80px;
-            background: var(--bg-gradient);
             text-align: center;
-            position: relative;
+            padding: 90px 20px 40px;
         }
 
-        .hero::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('https://www.transparenttextures.com/patterns/cubes.png');
-            opacity: 0.05;
-            pointer-events: none;
-        }
-
-        .hero-content {
-            position: relative;
-            z-index: 1;
-            max-width: 900px;
-            margin: 0 auto;
+        .badge {
+            display: inline-block;
+            padding: 6px 16px;
+            background: #e0edff;
+            color: #2563eb;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
         }
 
         .hero h1 {
-            font-size: 52px;
-            line-height: 1.2;
+            font-size: 46px;
             margin-bottom: 20px;
-            color: var(--text-dark);
-            background: linear-gradient(90deg, #1f2937, #4b5563);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+            letter-spacing: -0.5px;
         }
 
-        .hero h3 {
-            font-size: 24px;
-            color: var(--primary-blue);
-            margin-bottom: 25px;
-            font-weight: 600;
+        .hero h1 span {
+            color: #2563eb;
         }
 
         .hero p {
+            max-width: 720px;
+            margin: auto;
+            color: #6b7280;
             font-size: 18px;
-            color: var(--text-gray);
-            margin-bottom: 40px;
-            max-width: 700px;
-            margin-left: auto;
-            margin-right: auto;
         }
 
-        .hero-btns {
+        /* ---------- ROLES ---------- */
+        .roles {
             display: flex;
             justify-content: center;
-            gap: 20px;
-        }
-
-        .btn-main {
-            padding: 15px 35px;
-            border-radius: 50px;
-            font-size: 18px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        .btn-primary {
-            background: linear-gradient(90deg, var(--primary-blue), var(--soft-purple));
-            color: var(--white);
-            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.25);
-        }
-
-        .btn-secondary {
-            background: var(--white);
-            color: var(--primary-blue);
-            border: 1px solid #e5e7eb;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-        }
-
-        .btn-main:hover {
-            transform: translateY(-3px);
-            box-shadow: var(--shadow-hover);
-        }
-
-        /* ---------- FEATURES SECTION ---------- */
-        .features {
-            padding: 100px 0;
-            background-color: var(--white);
-        }
-
-        .section-header {
-            text-align: center;
-            margin-bottom: 60px;
-        }
-
-        .section-header h2 {
-            font-size: 36px;
-            color: var(--text-dark);
-            margin-bottom: 15px;
-        }
-
-        .section-header p {
-            color: var(--text-gray);
-            font-size: 18px;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 30px;
+            padding: 60px 40px;
+            flex-wrap: wrap;
         }
 
-        .feature-card {
-            background: var(--white);
-            padding: 40px 30px;
-            border-radius: 20px;
-            text-align: left;
-            box-shadow: var(--shadow-soft);
-            transition: var(--transition);
-            border: 1px solid #f3f4f6;
+        .card {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 35px 30px;
+            width: 320px;
+            text-align: center;
+            box-shadow: 0 12px 30px rgba(15,23,42,0.06);
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
         }
+        .card:hover { transform: translateY(-6px); box-shadow: 0 20px 50px rgba(15,23,42,0.09); }
 
-        .feature-card:hover {
-            transform: translateY(-10px);
-            box-shadow: var(--shadow-hover);
-            border-color: var(--primary-blue);
-        }
-
-        .feature-icon {
+        .card .icon {
             width: 60px;
             height: 60px;
-            background: #eff6ff;
-            color: var(--primary-blue);
+            border-radius: 14px;
+            margin: auto;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 15px;
-            font-size: 26px;
-            margin-bottom: 25px;
-            transition: var(--transition);
-        }
-
-        .feature-card:hover .feature-icon {
-            background: var(--primary-blue);
-            color: var(--white);
-        }
-
-        .feature-card h4 {
-            font-size: 20px;
-            margin-bottom: 15px;
-        }
-
-        .feature-card p {
-            color: var(--text-gray);
-            font-size: 15px;
-        }
-
-        /* ---------- HOW IT WORKS ---------- */
-        .how-it-works {
-            padding: 100px 0;
-            background: #f8fafc;
-        }
-
-        .steps {
-            display: flex;
-            justify-content: space-between;
-            gap: 40px;
-            flex-wrap: wrap;
-            margin-top: 50px;
-        }
-
-        .step {
-            flex: 1;
-            min-width: 200px;
-            text-align: center;
-            position: relative;
-        }
-
-        .step-number {
-            width: 50px;
-            height: 50px;
-            background: var(--primary-blue);
-            color: var(--white);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            margin: 0 auto 20px;
-            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
-        }
-
-        .step h5 {
-            font-size: 18px;
-            margin-bottom: 10px;
-        }
-
-        .step p {
-            font-size: 14px;
-            color: var(--text-gray);
-        }
-
-        /* ---------- CTA SECTION ---------- */
-        .cta-section {
-            padding: 80px 0;
-            background: linear-gradient(90deg, var(--primary-blue), var(--soft-purple));
-            color: var(--white);
-            text-align: center;
-        }
-
-        .cta-section h2 {
-            font-size: 32px;
+            font-size: 28px;
             margin-bottom: 20px;
         }
 
-        .cta-section p {
-            font-size: 18px;
-            opacity: 0.9;
-            margin-bottom: 35px;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
+        .patient { background: #e0edff; color: #2563eb; }
+        .caregiver { background: #e6f7ef; color: #059669; }
+        .admin { background: #f1eafe; color: #7c3aed; }
+
+        .card h3 {
+            margin-bottom: 10px;
         }
 
-        .btn-white {
-            background: var(--white);
-            color: var(--primary-blue);
-            padding: 15px 40px;
-            border-radius: 50px;
+        .card p {
+            color: #6b7280;
+            font-size: 15px;
+            margin-bottom: 25px;
+        }
+
+        .card a {
+            display: inline-block;
+            padding: 10px 24px;
+            border-radius: 25px;
+            text-decoration: none;
+            color: #ffffff;
+            background: linear-gradient(90deg,#2563eb,#3b82f6);
             font-weight: 700;
-            font-size: 18px;
+            box-shadow: 0 8px 20px rgba(59,130,246,0.12);
         }
 
-        .btn-white:hover {
-            transform: scale(1.05);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        /* ---------- FEATURES ---------- */
+        .features {
+            display: flex;
+            justify-content: center;
+            gap: 80px;
+            padding: 80px 40px;
+            background: #ffffff;
+            text-align: center;
+            flex-wrap: wrap;
+        }
+
+        .feature {
+            max-width: 260px;
+        }
+
+        .feature .ficon {
+            font-size: 36px;
+            margin-bottom: 15px;
+        }
+
+        .feature h4 {
+            margin-bottom: 10px;
+        }
+
+        .feature p {
+            color: #6b7280;
+            font-size: 15px;
         }
 
         /* ---------- FOOTER ---------- */
         footer {
-            background: #111827;
-            color: #d1d5db;
-            padding: 60px 0 30px;
-        }
-
-        .footer-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 40px;
-            margin-bottom: 40px;
-        }
-
-        .footer-info h4 {
-            color: var(--white);
-            margin-bottom: 20px;
-            font-size: 20px;
-        }
-
-        .footer-info p {
-            font-size: 14px;
-            line-height: 1.8;
-        }
-
-        .footer-links h4 {
-            color: var(--white);
-            margin-bottom: 20px;
-        }
-
-        .footer-links ul li {
-            margin-bottom: 12px;
-        }
-
-        .footer-links ul li a {
-            color: #9ca3af;
-            font-size: 14px;
-        }
-
-        .footer-links ul li a:hover {
-            color: var(--white);
-            padding-left: 5px;
-        }
-
-        .footer-bottom {
-            padding-top: 30px;
-            border-top: 1px solid #374151;
             text-align: center;
+            padding: 30px;
             font-size: 14px;
-        }
-
-        /* ---------- RESPONSIVE ---------- */
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 36px;
-            }
-
-            .hero h3 {
-                font-size: 20px;
-            }
-
-            nav ul {
-                display: none;
-            }
-
-            .hero-btns {
-                flex-direction: column;
-            }
-
-            .steps {
-                flex-direction: column;
-            }
+            color: #6b7280;
         }
     </style>
 </head>
 
 <body>
 
-    <!-- NAVBAR -->
-    <header>
-        <div class="container navbar">
-            <a href="/" class="logo">
-                <i class="fas fa-brain"></i> MemoryCare
-            </a>
-            <nav>
-                <ul>
-                    <li><a href="{% url 'home' %}">Home</a></li>
-                    <li><a href="#features">Features</a></li>
-                    <li><a href="#how-it-works">How It Works</a></li>
-                    {% if user.is_authenticated %}
-                    <li><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
-                    {% else %}
-                    <li><a href="{% url 'login' %}">Login</a></li>
-                    {% endif %}
-                </ul>
-            </nav>
-            <div class="nav-btns">
-                {% if user.is_authenticated %}
-                <a href="{% url 'accounts:logout' %}" class="btn-login">Logout</a>
-                <a href="{% url 'dashboard:home' %}" class="btn-register">Dashboard</a>
-                {% else %}
-                <a href="{% url 'login' %}" class="btn-login">Login</a>
-                <a href="{% url 'register' %}" class="btn-register">Get Started</a>
-                {% endif %}
-            </div>
-        </div>
-    </header>
+<header>
+    <div class="logo">
+        🧠 MemoryCare
+    </div>
+    <nav>
+        <a href="#">Help & Support</a>
+        <a href="{% url 'accounts:login' %}" class="btn">Sign in</a>
+    </nav>
+</header>
 
-    <!-- HERO SECTION -->
-    <section class="hero">
-        <div class="container hero-content">
-            <h3>AI-Driven Wellness Support</h3>
-            <h1>AI-Based Alzheimer’s Care & <br>Monitoring System</h1>
-            <p>Smart cognitive tracking, daily reminders, and dedicated caregiver support powered by artificial
-                intelligence to ensure comfort and safety for your loved ones.</p>
-            <div class="hero-btns">
-                <a href="/register" class="btn-main btn-primary">Start Monitoring Now</a>
-                <a href="/login" class="btn-main btn-secondary">System Login</a>
-            </div>
-        </div>
-    </section>
+<section class="hero">
+    <div class="badge">AI-Powered Care Support</div>
+    <h1>Compassionate Care for <span>Alzheimer's Patients</span></h1>
+    <p>
+        MemoryCare provides personalized support, cognitive tracking,
+        and seamless communication between patients, caregivers, and healthcare administrators.
+    </p>
+</section>
 
-    <!-- FEATURES SECTION -->
-    <section class="features" id="features">
-        <div class="container">
-            <div class="section-header">
-                <h2>Comprehensive Care Modules</h2>
-                <p>Designed with medical precision and AI intelligence to support every stage of memory care.</p>
-            </div>
+<section class="roles">
+    <div class="card">
+        <div class="icon patient">👤</div>
+        <h3>Patient</h3>
+        <p>Access your health dashboard, cognitive tests, and daily activities.</p>
+        {# New patients go to registration directly #}
+        <a href="{% url 'accounts:register' %}">Register as Patient →</a>
+    </div>
 
-            <div class="features-grid">
-                <!-- 1. User Management -->
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-users-cog"></i></div>
-                    <h4>User Management</h4>
-                    <p>Dedicated roles for Patients, Caregivers, and Doctors with personalized access control.</p>
-                </div>
+    <div class="card">
+        <div class="icon caregiver">💚</div>
+        <h3>Caregiver</h3>
+        <p>Monitor patients, view alerts, and manage care routines.</p>
+        <a href="{% url 'accounts:login' %}">Continue →</a>
+    </div>
 
-                <!-- 2. AI Cognitive Assessment -->
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-brain"></i></div>
-                    <h4>AI Cognitive Assessment</h4>
-                    <p>Intelligent testing to monitor memory health and track cognitive changes over time.</p>
-                </div>
+    <div class="card">
+        <div class="icon admin">🛡️</div>
+        <h3>Docter</h3>
+        <p>Manage users, assign caregivers, and oversee the system.</p>
+        <a href="{% url 'accounts:login' %}">Continue →</a>
+    </div>
+</section>
 
-                <!-- 3. Daily Activity Tracking -->
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-calendar-check"></i></div>
-                    <h4>Activity Tracking</h4>
-                    <p>Structured daily routines and physical activities monitored for consistency and progress.</p>
-                </div>
+<section class="features">
+    <div class="feature">
+        <div class="ficon">🧠</div>
+        <h4>Cognitive Tracking</h4>
+        <p>Monitor cognitive health with simple, engaging tests.</p>
+    </div>
 
-                <!-- 4. Intelligent Reminder System -->
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-bell"></i></div>
-                    <h4>Intelligent Reminders</h4>
-                    <p>Smart medication and appointment alerts that adapt to the patient's schedule.</p>
-                </div>
+    <div class="feature">
+        <div class="ficon">💊</div>
+        <h4>Medication Reminders</h4>
+        <p>Never miss a dose with gentle, timely reminders.</p>
+    </div>
 
-                <!-- 5. AI Insights & Risk Alerts -->
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-exclamation-triangle"></i></div>
-                    <h4>AI Insights & Alerts</h4>
-                    <p>Proactive risk detection and health insights generated from activity patterns.</p>
-                </div>
+    <div class="feature">
+        <div class="ficon">👨‍👩‍👧</div>
+        <h4>Family Connection</h4>
+        <p>Keep loved ones informed with real-time updates.</p>
+    </div>
+</section>
 
-                <!-- 6. Emotional & Well-being Support -->
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-heartbeat"></i></div>
-                    <h4>Emotional Support</h4>
-                    <p>Tools designed to reduce anxiety and promote emotional well-being for patients.</p>
-                </div>
-
-                <!-- 7. Doctor Report Management -->
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-file-medical-alt"></i></div>
-                    <h4>Report Management</h4>
-                    <p>Comprehensive health data compiled into professional reports for healthcare providers.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- HOW IT WORKS SECTION -->
-    <section class="how-it-works" id="how-it-works">
-        <div class="container">
-            <div class="section-header">
-                <h2>How It Works</h2>
-                <p>Simplifying memory care in four easy steps.</p>
-            </div>
-
-            <div class="steps">
-                <div class="step">
-                    <div class="step-number">1</div>
-                    <h5>Register User</h5>
-                    <p>Create profiles for patients and assign dedicated caregivers or doctors.</p>
-                </div>
-                <div class="step">
-                    <div class="step-number">2</div>
-                    <h5>Track Activities</h5>
-                    <p>Engage in cognitive tests and daily routines designed for brain health.</p>
-                </div>
-                <div class="step">
-                    <div class="step-number">3</div>
-                    <h5>AI Analysis</h5>
-                    <p>Our intelligent system analyzes patterns to detect early cognitive shifts.</p>
-                </div>
-                <div class="step">
-                    <div class="step-number">4</div>
-                    <h5>Receive Alerts</h5>
-                    <p>Caregivers get real-time insights and reports to ensure proactive care.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- CALL TO ACTION -->
-    <section class="cta-section">
-        <div class="container">
-            <h2>Ready to Transform Memory Care?</h2>
-            <p>Join thousands of families using MemoryCare to provide professional, AI-supported assistance for their
-                loved ones.</p>
-            <a href="/register" class="btn-white">Start Monitoring Now</a>
-        </div>
-    </section>
-
-    <!-- FOOTER -->
-    <footer>
-        <div class="container">
-            <div class="footer-grid">
-                <div class="footer-info">
-                    <h4>MemoryCare</h4>
-                    <p>We are dedicated to providing smart, compassionate technology solutions for Alzheimer's and
-                        Dementia care. Our mission is to improve the quality of life for patients and caregivers through
-                        AI-driven support.</p>
-                </div>
-                <div class="footer-links">
-                    <h4>Quick Links</h4>
-                    <ul>
-                        <li><a href="/">Home</a></li>
-                        <li><a href="/#features">Features</a></li>
-                        <li><a href="/register">Register</a></li>
-                        <li><a href="/login">Login</a></li>
-                    </ul>
-                </div>
-                <div class="footer-links">
-                    <h4>Support</h4>
-                    <ul>
-                        <li><a href="#">Contact Us</a></li>
-                        <li><a href="#">Privacy Policy</a></li>
-                        <li><a href="#">Terms of Service</a></li>
-                        <li><a href="#">FAQs</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                &copy; 2026 MemoryCare Web App. All rights reserved. Designed for excellence in healthcare.
-            </div>
-        </div>
-    </footer>
-
-    <!-- Animations Script (Simple Fade-in on Scroll) -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const cards = document.querySelectorAll('.feature-card, .step');
-
-            const observerOptions = {
-                threshold: 0.1
-            };
-
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.style.opacity = '1';
-                        entry.target.style.transform = 'translateY(0)';
-                    }
-                });
-            }, observerOptions);
-
-            cards.forEach(card => {
-                card.style.opacity = '0';
-                card.style.transform = 'translateY(20px)';
-                card.style.transition = 'all 0.6s ease-out';
-                observer.observe(card);
-            });
-        });
-    </script>
+<footer>
+    © 2026 MemoryCare. Designed with care for patients and families.
+</footer>
 
 </body>
-
 </html>

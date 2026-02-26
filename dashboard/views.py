@@ -44,13 +44,25 @@ def doctor_dashboard(request):
     from accounts.models import User
     from ml_module.ml_service import ml_service
 
-    # Filter patients based on role
+    # Filter patients based on role (use the new field names `doctor` / `caregiver`)
     if is_doctor:
+        # Patients whose `doctor` is the logged-in user
         patients = User.objects.filter(role='PATIENT', doctor=request.user).order_by('last_name', 'first_name')
     else:
+        # Caregivers see patients where they are the assigned caregiver
         patients = User.objects.filter(role='PATIENT', caregiver=request.user).order_by('last_name', 'first_name')
     
-    caregivers = User.objects.filter(role='CAREGIVER').order_by('last_name', 'first_name')
+    # Get caregivers under this doctor's network
+    if is_doctor:
+        # Show all caregivers that were registered by / linked to this doctor,
+        # regardless of whether they already have patients assigned.
+        caregivers = User.objects.filter(
+            role='CAREGIVER',
+            doctor=request.user
+        ).order_by('last_name', 'first_name')
+    else:
+        # For caregivers viewing, show all caregivers in the system (could be limited later)
+        caregivers = User.objects.filter(role='CAREGIVER').order_by('last_name', 'first_name')
 
     # Trigger ML Sync for these patients
     for p in patients:
@@ -96,9 +108,10 @@ def assign_caregiver(request):
         if getattr(caregiver, 'role', '').upper() != 'CAREGIVER':
             messages.error(request, 'Invalid caregiver selected')
             return redirect('dashboard:doctor_dashboard')
-        patient.assigned_caregiver = caregiver
+        # Use the `caregiver` FK defined on the User model
+        patient.caregiver = caregiver
     else:
-        patient.assigned_caregiver = None
+        patient.caregiver = None
 
     patient.save()
     messages.success(request, 'Caregiver assignment updated')
@@ -855,9 +868,9 @@ def predict_risk_api(request, patient_id=None):
     recommendations = ml_service.get_recommendations(risk_level, None, features)
 
     # Trigger Alert if Risk is High
-    if risk_level == 'High Risk' and target_user.assigned_caregiver:
+    if risk_level == 'High Risk' and getattr(target_user, 'caregiver', None):
         Alert.objects.get_or_create(
-            caregiver=target_user.assigned_caregiver,
+            caregiver=target_user.caregiver,
             patient=target_user,
             alert_type='health',
             message=f"CRITICAL: High cognitive decline risk predicted for {target_user.get_full_name()} (Confidence: {confidence:.1f}%)",
@@ -891,9 +904,9 @@ def detect_anomaly_api(request, patient_id=None):
     # For now, we use the detect_anomalies function which has a heuristic fallback
     anomaly_result = detect_anomalies(target_user)
 
-    if anomaly_result['is_anomaly'] and target_user.assigned_caregiver:
+    if anomaly_result['is_anomaly'] and getattr(target_user, 'caregiver', None):
         Alert.objects.get_or_create(
-            caregiver=target_user.assigned_caregiver,
+            caregiver=target_user.caregiver,
             patient=target_user,
             alert_type='other',
             message=f"ANOMALY DETECTED: {', '.join(anomaly_result['reasons'])} for {target_user.get_full_name()}",

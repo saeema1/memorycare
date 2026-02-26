@@ -18,15 +18,15 @@
         <hr>
         <h3>Assigned Staff</h3>
         <p><strong>Doctor:</strong>
-            {% if user_profile.assigned_doctor %}
-                <a href="#">{{ user_profile.assigned_doctor.get_full_name|default:user_profile.assigned_doctor.username }}</a> - {{ user_profile.assigned_doctor.email }}
+            {% if user_profile.doctor %}
+                <a href="#">{{ user_profile.doctor.get_full_name|default:user_profile.doctor.username }}</a> - {{ user_profile.doctor.email }}
             {% else %}
                 Not assigned
             {% endif %}
         </p>
         <p><strong>Caregiver:</strong>
-            {% if user_profile.assigned_caregiver %}
-                <a href="#">{{ user_profile.assigned_caregiver.get_full_name|default:user_profile.assigned_caregiver.username }}</a> - {{ user_profile.assigned_caregiver.email }}
+            {% if user_profile.caregiver %}
+                <a href="#">{{ user_profile.caregiver.get_full_name|default:user_profile.caregiver.username }}</a> - {{ user_profile.caregiver.email }}
             {% else %}
                 Not assigned
             {% endif %}

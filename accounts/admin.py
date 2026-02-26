@@ -23,7 +23,7 @@ class UserAdmin(BaseUserAdmin):
             'fields': ('phone_number', 'date_of_birth', 'address')
         }),
         ('Assignments', {
-            'fields': ('assigned_doctor', 'assigned_caregiver'),
+            'fields': ('doctor', 'caregiver'),
             'classes': ('collapse',)
         }),
         ('Patient Information', {

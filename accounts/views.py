@@ -103,6 +103,12 @@ def register_patient(request):
             patient = form.save(commit=False)
             # Ensure role uses model's choice value
             patient.role = 'PATIENT'
+            # Automatically link this patient to the logged-in doctor (admin)
+            # so they appear under that doctor's care on the dashboard.
+            if getattr(request.user, 'role', '').upper() == 'DOCTOR':
+                from .models import User
+                # store the doctor relationship on the patient
+                patient.doctor = request.user
             patient.save()
             return redirect('dashboard:doctor_dashboard')
     else:
@@ -121,6 +127,9 @@ def register_caregiver(request):
         if form.is_valid():
             caregiver = form.save(commit=False)
             caregiver.role = 'CAREGIVER'
+            # Link caregiver under the current doctor so assignments are clear
+            if getattr(request.user, 'role', '').upper() == 'DOCTOR':
+                caregiver.doctor = request.user
             caregiver.save()
             return redirect('dashboard:doctor_dashboard')
     else:

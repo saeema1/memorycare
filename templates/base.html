@@ -47,19 +47,7 @@
                 </h2>
             </div>
 
-            {# User Profile Section #}
-            <div class="sidebar-user-info">
-                <div class="avatar-circle">
-                    {{ user.first_name|first|default:user.username|first }}
-                </div>
-                <div class="user-details">
-                    <div class="user-name" title="{{ user.get_full_name|default:user.username }}">
-                        {{ user.get_full_name|default:user.username }}
-                    </div>
-                    <div class="user-role">{{ user.get_role_display }}</div>
-                    <div class="user-username">@{{ user.username }}</div>
-                </div>
-            </div>
+
 
             <nav>
                 <ul>
