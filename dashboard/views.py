@@ -2,6 +2,22 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.http import require_POST
+from django.utils import timezone
+
+def ensure_patient_activities(user):
+    """Seeds default daily activities for a patient if none exist."""
+    from .models import DailyActivity
+    if not DailyActivity.objects.filter(user=user).exists():
+        std_time = timezone.now().replace(minute=0, second=0, microsecond=0)
+        # Morning Routine
+        DailyActivity.objects.create(user=user, name='Morning Medication', activity_type='medication', scheduled_for=std_time.replace(hour=8), recurrence='daily')
+        DailyActivity.objects.create(user=user, name='Breakfast', activity_type='meal', scheduled_for=std_time.replace(hour=8, minute=30), recurrence='daily')
+        # Afternoon
+        DailyActivity.objects.create(user=user, name='Afternoon Walk', activity_type='exercise', scheduled_for=std_time.replace(hour=14), recurrence='daily')
+        DailyActivity.objects.create(user=user, name='Lunch', activity_type='meal', scheduled_for=std_time.replace(hour=13), recurrence='daily')
+        # Evening
+        DailyActivity.objects.create(user=user, name='Evening Medication', activity_type='medication', scheduled_for=std_time.replace(hour=20), recurrence='daily')
+        DailyActivity.objects.create(user=user, name='Dinner', activity_type='meal', scheduled_for=std_time.replace(hour=19, minute=0), recurrence='daily')
 
 
 def safe_has_role(user, attr_name):
@@ -271,19 +287,8 @@ def patient_dashboard(request):
     cognitive_tests = CognitiveTest.objects.all()[:5]
 
     # Today's scheduled activities (include recurrence)
+    ensure_patient_activities(request.user)
     from .models import DailyActivity
-    # Seed activities if user has none (ever)
-    if not DailyActivity.objects.filter(user=request.user).exists():
-        std_time = timezone.now().replace(minute=0, second=0, microsecond=0)
-        # Morning Routine
-        DailyActivity.objects.create(user=request.user, name='Morning Medication', activity_type='medication', scheduled_for=std_time.replace(hour=8), recurrence='daily')
-        DailyActivity.objects.create(user=request.user, name='Breakfast', activity_type='meal', scheduled_for=std_time.replace(hour=8, minute=30), recurrence='daily')
-        # Afternoon
-        DailyActivity.objects.create(user=request.user, name='Afternoon Walk', activity_type='exercise', scheduled_for=std_time.replace(hour=14), recurrence='daily')
-        DailyActivity.objects.create(user=request.user, name='Lunch', activity_type='meal', scheduled_for=std_time.replace(hour=13), recurrence='daily')
-        # Evening
-        DailyActivity.objects.create(user=request.user, name='Evening Medication', activity_type='medication', scheduled_for=std_time.replace(hour=20), recurrence='daily')
-
     all_activities = DailyActivity.objects.filter(user=request.user).order_by('scheduled_for')
     activities = [a for a in all_activities if a.occurs_on(today)]
 
@@ -317,24 +322,29 @@ def patient_dashboard(request):
     vitals = {}
     
     # Calculate stats
-    total_activities = len(activities)
-    completed_activities = sum(1 for a in activities if getattr(a, 'completed', False))
+    from .models import TestResult
+    tests_today = TestResult.objects.filter(user=request.user, created_at__date=today).count()
+
+    total_activities = len(activities) + tests_today  # treat each test taken today as an activity
+    completed_activities = sum(1 for a in activities if getattr(a, 'completed', False)) + tests_today
     remaining_activities = total_activities - completed_activities
+
     percent_completed = 0 if total_activities == 0 else int((completed_activities / total_activities) * 100)
 
     if health_score >= 75: health_label = 'Good'
     elif health_score >= 50: health_label = 'Fair'
     else: health_label = 'Needs attention'
 
-    # Build Schedule (Merge Reminders + Activities, sort by time)
+    # Build Schedule (Merge Reminders + Activities + test results, sort by time)
     schedule_items = []
     for r in reminders_today:
         schedule_items.append({'time': r.scheduled_for, 'title': r.title, 'type': 'reminder', 'completed': r.read})
     for a in activities:
-        # Only add time-critical activities to schedule to keep it clean? 
-        # User said "Schedule must show only time-based reminders and important events."
-        # All DailyActivities have a time, so we include them but maybe we can visually distinguish.
         schedule_items.append({'time': a.scheduled_for, 'title': a.name, 'type': 'activity', 'completed': a.completed, 'obj': a})
+    # include any cognitive tests taken today
+    tests_results_today = TestResult.objects.filter(user=request.user, created_at__date=today)
+    for tr in tests_results_today:
+        schedule_items.append({'time': tr.created_at, 'title': f"Cognitive Test: {tr.test.name}", 'type': 'test', 'completed': True})
     
     # Sort by time
     schedule_items.sort(key=lambda x: x['time'])
@@ -357,6 +367,7 @@ def patient_dashboard(request):
         'patient_last_activity': patient_last_activity,
         'vitals': vitals,
         'recommendations': recommendations,
+        'tests_today': tests_today,
     }
 
     return render(request, 'dashboard/patient_dashboard.html', context)
@@ -393,20 +404,52 @@ def cognitive_tests(request):
 @login_required
 def daily_activities(request):
     """List and manage today's activities for the logged-in patient, including recurring activities."""
-    from .models import DailyActivity
+    from .models import DailyActivity, TestResult
+    from accounts.models import Reminder
     if not safe_has_role(request.user, 'is_patient'):
         messages.error(request, 'Patient access required')
         return redirect('dashboard:home')
 
     from django.utils import timezone
     today = timezone.localdate()
+    
+    # 1. Activities
+    ensure_patient_activities(request.user)
     all_activities = DailyActivity.objects.filter(user=request.user).order_by('scheduled_for')
     activities_for_today = [a for a in all_activities if a.occurs_on(today)]
 
-    total = len(activities_for_today)
-    completed = sum(1 for a in activities_for_today if getattr(a, 'completed', False))
+    # 2. Reminders
+    reminders_today = Reminder.objects.filter(patient=request.user, scheduled_for__date=today)
+    
+    # 3. Tests
+    tests_results_today = TestResult.objects.filter(user=request.user, created_at__date=today)
+    tests_today = tests_results_today.count()
+
+    # Build Unified Schedule
+    schedule_items = []
+    for r in reminders_today:
+        schedule_items.append({'time': r.scheduled_for, 'title': r.title, 'type': 'reminder', 'completed': r.read})
+    for a in activities_for_today:
+        schedule_items.append({'time': a.scheduled_for, 'title': a.name, 'type': 'activity', 'completed': a.completed, 'obj': a})
+    for tr in tests_results_today:
+        schedule_items.append({'time': tr.created_at, 'title': f"Cognitive Test: {tr.test.name}", 'type': 'test', 'completed': True})
+    
+    # Sort by time
+    schedule_items.sort(key=lambda x: x['time'])
+
+    total = len(activities_for_today) + tests_today
+    completed = sum(1 for a in activities_for_today if getattr(a, 'completed', False)) + tests_today
     percent = 0 if total == 0 else int((completed / total) * 100)
-    return render(request, 'dashboard/daily_activities.html', {'activities': activities_for_today, 'total_activities': total, 'completed_activities': completed, 'percent_completed': percent})
+    
+    context = {
+        'schedule': schedule_items,
+        'activities': activities_for_today, # keep for legacy if needed
+        'total_activities': total,
+        'completed_activities': completed,
+        'percent_completed': percent,
+        'tests_today': tests_today,
+    }
+    return render(request, 'dashboard/daily_activities.html', context)
 
 
 @login_required

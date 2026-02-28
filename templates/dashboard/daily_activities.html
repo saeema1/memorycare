@@ -26,11 +26,15 @@
             <div>
                 <h2 style="font-size: 1.25rem; font-weight: 700; color: #065F46; margin-bottom: 0.5rem;">Today's
                     Progress</h2>
-                <p style="color: #047857; font-size: 1rem;"><span id="completed-count">{{ completed_activities }}</span>
-                    of <span id="total-count">{{ total_activities }}</span> activities completed</p>
+                <p style="color: #047857; font-size: 1rem;">
+                    <span id="completed-count">{{ completed_activities }}</span> of <span id="total-count">{{ total_activities }}</span> activities completed
+                    {% if tests_today %}
+                    &middot; {{ tests_today }} test{{ tests_today|pluralize }} completed
+                    {% endif %}
+                </p>
             </div>
-            <div style="font-size: 2.5rem; font-weight: 700; color: #059669;" id="percent-number">{{ percent_completed
-                }}%</div>
+            <!-- large percent number removed per request -->
+            <div style="width:120px;" aria-hidden="true"></div>
         </div>
         <div style="height: 12px; background: #D1FAE5; border-radius: 9999px; overflow: hidden;">
             <div id="percent-bar"
@@ -46,39 +50,48 @@
     </h2>
 
     <div class="schedule-list" style="display: flex; flex-direction: column; gap: 1rem;">
-        {% if activities %}
-        {% for a in activities %}
+        {% if schedule %}
+        {% for item in schedule %}
         <div class="card"
-            style="padding: 1.5rem; display: flex; align-items: center; gap: 1.5rem; border: 1px solid var(--border-color); {% if a.completed %}background-color: #F9FAFB; opacity: 0.8;{% endif %}">
+            style="padding: 1.5rem; display: flex; align-items: center; gap: 1.5rem; border: 1px solid var(--border-color); {% if item.completed %}background-color: #F9FAFB; opacity: 0.8;{% endif %}">
             <!-- Icon -->
             <div style="width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;
-                    {% if 'medication' in a.activity_type %}background: #DBEAFE; color: #2563EB;
-                    {% elif 'meal' in a.activity_type %}background: #FEF3C7; color: #D97706;
-                    {% elif 'exercise' in a.activity_type %}background: #D1FAE5; color: #059669;
+                    {% if item.type == 'reminder' %}background: #DBEAFE; color: #2563EB;
+                    {% elif item.type == 'activity' %}
+                        {% if 'medication' in item.obj.activity_type %}background: #DBEAFE; color: #2563EB;
+                        {% elif 'meal' in item.obj.activity_type %}background: #FEF3C7; color: #D97706;
+                        {% elif 'exercise' in item.obj.activity_type %}background: #D1FAE5; color: #059669;
+                        {% else %}background: #F3F4F6; color: #4B5563;{% endif %}
+                    {% elif item.type == 'test' %}background: #dcfce7; color: #166534;
                     {% else %}background: #F3F4F6; color: #4B5563;{% endif %}">
                 <i
-                    class="fas {% if 'medication' in a.activity_type %}fa-pills{% elif 'meal' in a.activity_type %}fa-utensils{% elif 'exercise' in a.activity_type %}fa-walking{% else %}fa-check{% endif %}"></i>
+                    class="fas {% if item.type == 'reminder' %}fa-bell{% elif item.type == 'activity' %}{% if 'medication' in item.obj.activity_type %}fa-pills{% elif 'meal' in item.obj.activity_type %}fa-utensils{% elif 'exercise' in item.obj.activity_type %}fa-walking{% else %}fa-check{% endif %}{% elif item.type == 'test' %}fa-brain{% else %}fa-check{% endif %}"></i>
             </div>
 
             <!-- Content -->
             <div style="flex: 1;">
                 <div
-                    style="font-size: 0.875rem; font-weight: 600; color: {% if 'medication' in a.activity_type %}#2563EB{% elif 'meal' in a.activity_type %}#D97706{% elif 'exercise' in a.activity_type %}#059669{% else %}#6B7280{% endif %}; text-transform: uppercase; margin-bottom: 0.25rem; letter-spacing: 0.05em;">
-                    {{ a.get_activity_type_display }}
+                    style="font-size: 0.875rem; font-weight: 600; color: {% if item.type == 'reminder' %}#2563EB{% elif item.type == 'activity' %}
+                        {% if 'medication' in item.obj.activity_type %}#2563EB{% elif 'meal' in item.obj.activity_type %}#D97706{% elif 'exercise' in item.obj.activity_type %}#059669{% else %}#6B7280{% endif %}
+                    {% elif item.type == 'test' %}#166534{% else %}#6B7280{% endif %}; text-transform: uppercase; margin-bottom: 0.25rem; letter-spacing: 0.05em;">
+                    {% if item.type == 'reminder' %}Reminder{% elif item.type == 'activity' %}{{ item.obj.get_activity_type_display }}{% elif item.type == 'test' %}Cognitive Test{% endif %}
                 </div>
-                <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-dark); margin-bottom: 0.25rem;">{{
-                    a.name }}</h3>
+                <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-dark); margin-bottom: 0.25rem;">
+                    {{ item.title }}</h3>
+                {% if item.time %}
                 <p
                     style="color: var(--text-light); display: flex; align-items: center; gap: 0.5rem; font-size: 0.95rem;">
-                    <i class="far fa-clock"></i> {{ a.scheduled_for|time:"g:i A" }}
+                    <i class="far fa-clock"></i> {{ item.time|time:"g:i A" }}
                 </p>
+                {% endif %}
             </div>
 
             <!-- Action/Status -->
             <div>
-                <form method="post" action="{% url 'dashboard:toggle_activity' a.id %}">{% csrf_token %}
+                {% if item.type == 'activity' %}
+                <form method="post" action="{% url 'dashboard:toggle_activity' item.obj.id %}">{% csrf_token %}
                     <input type="hidden" name="next" value="{% url 'dashboard:daily_activities' %}">
-                    {% if a.completed %}
+                    {% if item.completed %}
                     <button type="submit"
                         style="width: 48px; height: 48px; border-radius: 50%; background: #D1FAE5; color: #059669; border: none; font-size: 1.25rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">
                         <i class="fas fa-check"></i>
@@ -90,6 +103,7 @@
                     </button>
                     {% endif %}
                 </form>
+                {% endif %}
             </div>
         </div>
         {% endfor %}
@@ -102,18 +116,5 @@
     </div>
 </div>
 
-<script>
-    // Compute progress on page load
-    (function () {
-        const items = document.querySelectorAll('.activity-list li');
-        const total = items.length;
-        let completed = 0;
-        items.forEach(li => { if (li.querySelector('.activity-completed')) completed += 1; });
-        const pct = total === 0 ? 0 : Math.round((completed / total) * 100);
-        document.getElementById('completed-count').textContent = completed;
-        document.getElementById('total-count').textContent = total;
-        document.getElementById('percent-number').textContent = pct + '%';
-        document.getElementById('percent-bar').style.width = pct + '%';
-    })();
-</script>
+<!-- server-side values drive progress; no need for client-side recalc -->
 {% endblock %}
