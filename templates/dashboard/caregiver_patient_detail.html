@@ -22,12 +22,16 @@
                 <div class="col-md-auto text-center mb-3 mb-md-0">
                     <div class="avatar-lg rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto"
                         style="width: 80px; height: 80px; font-size: 2rem; font-weight: 700;">
+                        {% if patient.first_name or patient.last_name %}
                         {{ patient.first_name|first }}{{ patient.last_name|first }}
+                        {% else %}
+                        {{ patient.username|slice:":1"|upper }}
+                        {% endif %}
                     </div>
                 </div>
                 <div class="col-md border-start-md ps-md-4">
                     <div class="d-flex flex-wrap align-items-center gap-3 mb-2">
-                        <h1 class="h3 fw-bold mb-0">{{ patient.get_full_name }}</h1>
+                        <h1 class="h3 fw-bold mb-0">{{ patient.get_full_name|default:patient.username }}</h1>
                         {% if patient.cognitive_risk == 'High Risk' %}
                         <span class="badge bg-danger px-3 py-2 rounded-pill">Critical Risk</span>
                         {% elif patient.cognitive_risk == 'Moderate Risk' %}

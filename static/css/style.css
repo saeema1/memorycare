@@ -492,9 +492,11 @@ h3.font-bold.text-lg {
     min-height: 100vh;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
+    /* Changed from center to prevent cropping top fields */
     background: var(--bg-body);
-    padding: 24px;
+    padding: 40px 24px;
+    /* More vertical padding */
 }
 
 .auth-content .card {
