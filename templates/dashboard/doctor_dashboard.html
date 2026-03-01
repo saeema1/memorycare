@@ -266,7 +266,7 @@
                                 <div class="small text-muted">@{{ c.username }}</div>
                             </td>
                             <td>
-                                <span class="badge bg-light text-dark"></span>
+                                <span class="badge bg-light text-dark">{{ c.specialization|default:"General" }}</span>
                             </td>
                             <td>
                                 <div>{{ c.phone_number|default:"N/A" }}</div>
