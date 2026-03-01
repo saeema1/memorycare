@@ -168,8 +168,6 @@
                                 <small class="text-muted">{{ alert.created_at|timesince }} ago</small>
                             </div>
                             <p class="mb-1 small text-dark">{{ alert.message|truncatechars:100 }}</p>
-                            <small class="text-primary fw-bold">{{
-                                alert.patient.get_full_name|default:alert.patient.username }}</small>
                         </div>
                         {% empty %}
                         <div class="p-5 text-center text-muted">
