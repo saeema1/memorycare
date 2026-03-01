@@ -27,8 +27,11 @@ class UserRegistrationForm(UserCreationForm):
         return cleaned
     
     def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user', None)  # Remove user from kwargs before calling super
+        self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        # Suppress password help texts
+        self.fields['password1'].help_text = ""
+        self.fields['password2'].help_text = ""
     
     def clean_username(self):
         """Override to allow any username without validation"""
@@ -72,6 +75,13 @@ class CaregiverRegistrationForm(UserCreationForm):
             'caregiving_experience_years', 'doctor'
         ]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'password1' in self.fields:
+            self.fields['password1'].help_text = ""
+        if 'password2' in self.fields:
+            self.fields['password2'].help_text = ""
+
     def save(self, commit=True):
         user = super().save(commit=False)
         user.role = 'CAREGIVER'
@@ -89,6 +99,13 @@ class DoctorRegistrationForm(UserCreationForm):
             'username', 'email', 'first_name', 'last_name',
             'phone_number', 'specialization', 'license_number'
         ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'password1' in self.fields:
+            self.fields['password1'].help_text = ""
+        if 'password2' in self.fields:
+            self.fields['password2'].help_text = ""
 
     def save(self, commit=True):
         user = super().save(commit=False)
