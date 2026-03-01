@@ -63,7 +63,10 @@ def doctor_dashboard(request):
 
     # Base patient set: all patients under this doctor / caregiver
     if is_doctor:
-        patients_base = User.objects.filter(role='PATIENT', doctor=request.user)
+        from django.db.models import Q
+        patients_base = User.objects.filter(
+            Q(role='PATIENT') & (Q(doctor=request.user) | Q(doctor__isnull=True))
+        )
     else:
         # Caregivers see patients where they are the assigned caregiver
         patients_base = User.objects.filter(role='PATIENT', caregiver=request.user)
@@ -140,7 +143,13 @@ def assign_caregiver(request):
 
     from accounts.models import User
 
-    patient = get_object_or_404(User, id=patient_id, doctor=request.user)
+    patient = get_object_or_404(User, id=patient_id)
+    
+    # Allow doctor to modify if patient belongs to them OR is unassigned
+    if patient.doctor is not None and patient.doctor != request.user:
+        messages.error(request, 'You cannot modify a patient assigned to another doctor.')
+        return redirect('dashboard:doctor_dashboard')
+
     # Ensure patient role matches expectation (tolerant check)
     if getattr(patient, 'role', '').upper() != 'PATIENT':
         messages.error(request, 'Invalid patient selected')
@@ -153,6 +162,7 @@ def assign_caregiver(request):
             return redirect('dashboard:doctor_dashboard')
         # Use the `caregiver` FK defined on the User model
         patient.caregiver = caregiver
+        patient.doctor = request.user
     else:
         patient.caregiver = None
 

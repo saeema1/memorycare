@@ -11,7 +11,7 @@ class UserRegistrationForm(UserCreationForm):
         fields = [
             'username', 'email', 'first_name', 'last_name', 
             'phone_number', 'date_of_birth', 'address', 
-            'gender', 'emergency_contact_name', 'emergency_contact_phone', 
+            'gender', 'emergency_contact_phone', 
             'alzheimers_duration_years'
         ]
         widgets = {
@@ -29,7 +29,9 @@ class UserRegistrationForm(UserCreationForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        # Suppress password help texts
+        # Suppress username and password help texts
+        if 'username' in self.fields:
+            self.fields['username'].help_text = ""
         self.fields['password1'].help_text = ""
         self.fields['password2'].help_text = ""
     
@@ -58,7 +60,7 @@ class UserLoginForm(AuthenticationForm):
 class PatientProfileForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'phone_number', 'date_of_birth', 'address', 'emergency_contact_name', 'emergency_contact_phone']
+        fields = ['first_name', 'last_name', 'phone_number', 'date_of_birth', 'address', 'emergency_contact_phone']
         widgets = {
             'date_of_birth': forms.DateInput(attrs={'type': 'date'})
         }
@@ -66,17 +68,25 @@ class PatientProfileForm(forms.ModelForm):
 
 class CaregiverRegistrationForm(UserCreationForm):
     email = forms.EmailField(required=True)
+    doctor = forms.ModelChoiceField(
+        queryset=User.objects.filter(role='DOCTOR'),
+        required=True,
+        label="Assign to Doctor",
+        help_text="Select the primary doctor you will be working under."
+    )
 
     class Meta:
         model = User
         fields = [
             'username', 'email', 'first_name', 'last_name',
             'phone_number', 'specialization', 'license_number',
-            'caregiving_experience_years'
+            'caregiving_experience_years', 'doctor'
         ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if 'username' in self.fields:
+            self.fields['username'].help_text = ""
         if 'password1' in self.fields:
             self.fields['password1'].help_text = ""
         if 'password2' in self.fields:
@@ -85,6 +95,7 @@ class CaregiverRegistrationForm(UserCreationForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         user.role = 'CAREGIVER'
+        user.doctor = self.cleaned_data.get('doctor')
         if commit:
             user.save()
         return user
@@ -102,6 +113,8 @@ class DoctorRegistrationForm(UserCreationForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if 'username' in self.fields:
+            self.fields['username'].help_text = ""
         if 'password1' in self.fields:
             self.fields['password1'].help_text = ""
         if 'password2' in self.fields:

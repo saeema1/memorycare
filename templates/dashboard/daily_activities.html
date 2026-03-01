@@ -27,7 +27,8 @@
                 <h2 style="font-size: 1.25rem; font-weight: 700; color: #065F46; margin-bottom: 0.5rem;">Today's
                     Progress</h2>
                 <p style="color: #047857; font-size: 1rem;">
-                    <span id="completed-count">{{ completed_activities }}</span> of <span id="total-count">{{ total_activities }}</span> activities completed
+                    <span id="completed-count">{{ completed_activities }}</span> of <span id="total-count">{{
+                        total_activities }}</span> activities completed
                     {% if tests_today %}
                     &middot; {{ tests_today }} test{{ tests_today|pluralize }} completed
                     {% endif %}
@@ -74,16 +75,11 @@
                     style="font-size: 0.875rem; font-weight: 600; color: {% if item.type == 'reminder' %}#2563EB{% elif item.type == 'activity' %}
                         {% if 'medication' in item.obj.activity_type %}#2563EB{% elif 'meal' in item.obj.activity_type %}#D97706{% elif 'exercise' in item.obj.activity_type %}#059669{% else %}#6B7280{% endif %}
                     {% elif item.type == 'test' %}#166534{% else %}#6B7280{% endif %}; text-transform: uppercase; margin-bottom: 0.25rem; letter-spacing: 0.05em;">
-                    {% if item.type == 'reminder' %}Reminder{% elif item.type == 'activity' %}{{ item.obj.get_activity_type_display }}{% elif item.type == 'test' %}Cognitive Test{% endif %}
+                    {% if item.type == 'reminder' %}Reminder{% elif item.type == 'activity' %}{{
+                    item.obj.get_activity_type_display }}{% elif item.type == 'test' %}Cognitive Test{% endif %}
                 </div>
                 <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-dark); margin-bottom: 0.25rem;">
                     {{ item.title }}</h3>
-                {% if item.time %}
-                <p
-                    style="color: var(--text-light); display: flex; align-items: center; gap: 0.5rem; font-size: 0.95rem;">
-                    <i class="far fa-clock"></i> {{ item.time|time:"g:i A" }}
-                </p>
-                {% endif %}
             </div>
 
             <!-- Action/Status -->

@@ -1,12 +1,12 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Caregiver Registration - MemoryCare{% endblock %}
+{% block title %}Caregiver Details - MemoryCare{% endblock %}
 
 {% block extra_css %}
 <style>
     .auth-card {
-        max-width: 650px !important;
+        max-width: 600px !important;
         margin: 2rem auto;
         padding: 2.5rem;
         background: #fff;
@@ -47,6 +47,7 @@
     input[type="password"],
     input[type="email"],
     input[type="date"],
+    input[type="number"],
     textarea,
     select {
         width: 100%;
@@ -120,8 +121,8 @@
 {% block content %}
 <div class="auth-card">
     <div class="auth-header">
-        <h1>Caregiver Registration</h1>
-        <p>Join the support network for MemoryCare patients</p>
+        <h1>Caregiver Details</h1>
+        <p>Please provide your professional caregiving information</p>
     </div>
 
     <form method="post">
@@ -214,12 +215,27 @@
         <div class="form-group">
             <label class="form-label">Caregiving Experience (Years)</label>
             {{ form.caregiving_experience_years }}
-            {% for error in form.caregiving_experience_years.errors %}<div class="error-text">{{ error }}</div>{% endfor
-            %}
+            {% for error in form.caregiving_experience_years.errors %}
+            <div class="error-text">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <div class="section-title">
+            <i class="fas fa-user-md"></i> Assignment
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Assigned Doctor</label>
+            {{ form.doctor }}
+            {% for error in form.doctor.errors %}
+            <div class="error-text">{{ error }}</div>
+            {% endfor %}
+            <p style="font-size: 0.75rem; color: #64748b; margin-top: 0.25rem;">Select the primary doctor you will be
+                working under.</p>
         </div>
 
         <button type="submit" class="btn-register mt-4">
-            Register as Professional Caregiver
+            Register as Caregiver
         </button>
     </form>
 </div>

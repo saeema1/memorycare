@@ -12,6 +12,17 @@ def home(request):
     return render(request, 'accounts/landing.html')
 
 
+def safe_has_role(user, attr_name):
+    """Call role-check helpers safely."""
+    attr = getattr(user, attr_name, False)
+    if isinstance(attr, bool):
+        return attr
+    try:
+        return attr()
+    except Exception:
+        return False
+
+
 def user_login(request):
     if request.method == 'POST':
         form = UserLoginForm(request, data=request.POST)
@@ -82,16 +93,32 @@ def logout_view(request):
 
 
 def register(request):
+    role = request.GET.get('role', 'patient').lower()
+    
+    if role == 'doctor':
+        return register_doctor(request)
+    
+    form_class = UserRegistrationForm
+    template_name = 'accounts/register.html'
+    
+    if role == 'caregiver':
+        from .forms import CaregiverRegistrationForm
+        form_class = CaregiverRegistrationForm
+        template_name = 'accounts/register_caregiver.html'
+    elif role == 'patient':
+        from .forms import PatientRegistrationForm
+        form_class = PatientRegistrationForm
+        template_name = 'accounts/register_patient.html'
+
     if request.method == 'POST':
-        form = UserRegistrationForm(request.POST)
+        form = form_class(request.POST)
         if form.is_valid():
-            form.save()
-            # Success message removed as requested by user
+            user = form.save()
             return redirect('accounts:login')
     else:
-        form = UserRegistrationForm()
+        form = form_class()
 
-    return render(request, 'accounts/register.html', {'form': form})
+    return render(request, template_name, {'form': form})
 
 
 @login_required
