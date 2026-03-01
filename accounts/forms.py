@@ -12,7 +12,7 @@ class UserRegistrationForm(UserCreationForm):
             'username', 'email', 'first_name', 'last_name', 
             'phone_number', 'date_of_birth', 'address', 
             'gender', 'emergency_contact_name', 'emergency_contact_phone', 
-            'alzheimers_duration_years', 'caregiver', 'doctor'
+            'alzheimers_duration_years'
         ]
         widgets = {
             'date_of_birth': forms.DateInput(attrs={'type': 'date'}),
@@ -72,7 +72,7 @@ class CaregiverRegistrationForm(UserCreationForm):
         fields = [
             'username', 'email', 'first_name', 'last_name',
             'phone_number', 'specialization', 'license_number',
-            'caregiving_experience_years', 'doctor'
+            'caregiving_experience_years'
         ]
 
     def __init__(self, *args, **kwargs):

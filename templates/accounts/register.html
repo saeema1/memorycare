@@ -1,39 +1,161 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Register - MemoryCare{% endblock %}
 
 {% block extra_css %}
 <style>
-    .force-visible,
-    .form-group,
-    .form-row {
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        border: 2px solid red !important;
-        padding: 10px !important;
-        margin: 10px !important;
-        min-height: 20px !important;
+    .auth-card {
+        max-width: 500px !important;
+        margin: 2rem auto;
+        padding: 2.5rem;
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    }
+
+    .auth-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .auth-header h1 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 0.5rem;
+    }
+
+    .auth-header p {
+        color: #64748b;
+        font-size: 0.875rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #334155;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Use the existing styles from style.css where possible, but override for local premium feel */
+    input[type="text"],
+    input[type="password"],
+    input[type="email"],
+    input[type="date"],
+    textarea,
+    select {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        transition: all 0.2s;
+        margin-bottom: 0;
+        /* Reset for our form-group spacing */
+    }
+
+    input:focus,
+    select:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        outline: none;
+    }
+
+    .error-text {
+        color: #ef4444;
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+    }
+
+    .btn-register {
+        width: 100%;
+        padding: 0.75rem;
+        background: #3b82f6;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+        margin-top: 1rem;
+    }
+
+    .btn-register:hover {
+        background: #2563eb;
+    }
+
+    .auth-footer {
+        text-align: center;
+        margin-top: 1.5rem;
+        font-size: 0.875rem;
+        color: #64748b;
+    }
+
+    .auth-footer a {
+        color: #3b82f6;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .help-text {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        margin-top: 0.25rem;
+    }
+
+    /* Standardize list styles for any help text that might remain */
+    .help-text ul {
+        padding-left: 1.25rem;
+        margin-top: 0.5rem;
+        margin-bottom: 0;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header">
-        <h1><i class="fas fa-user-plus"></i> Register</h1>
+<div class="auth-card">
+    <div class="auth-header">
+        <h1>Create Account</h1>
+        <p>Join MemoryCare to start your journey</p>
     </div>
 
     <form method="post">
         {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-success">
-            <i class="fas fa-user-plus"></i> Register
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger mb-4">
+            {% for error in form.non_field_errors %}
+            <div class="small">{{ error }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% for field in form %}
+        <div class="form-group">
+            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}
+            <div class="help-text">{{ field.help_text|safe }}</div>
+            {% endif %}
+            {% for error in field.errors %}
+            <div class="error-text">{{ error }}</div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+
+        <button type="submit" class="btn-register">
+            Register Account
         </button>
     </form>
 
-    <div class="form-footer">
-        <p>Already have an account? <a href="{% url 'accounts:login' %}">Login here</a></p>
+    <div class="auth-footer">
+        Already have an account? <a href="{% url 'accounts:login' %}">Sign In</a>
     </div>
 </div>
 {% endblock %}
